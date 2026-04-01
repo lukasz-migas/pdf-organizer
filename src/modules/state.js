@@ -3,5 +3,6 @@ export function createState() {
     files: [],
     labels: [],
     merged: null,
+    labelsCollapsed: false,
   };
 }

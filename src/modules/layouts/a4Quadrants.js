@@ -59,6 +59,7 @@ export class A4QuadrantsLayout extends LabelLayoutStrategy {
           id: `${fileRecord.id}-p${pageIndex + 1}-${quadrant.key}`,
           sourceFileId: fileRecord.id,
           sourceFileName: fileRecord.file.name,
+          documentType: fileRecord.documentType,
           sourcePage: pageIndex + 1,
           quadrant: quadrant.key,
           pdfBuffer,

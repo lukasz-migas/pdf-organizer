@@ -5,14 +5,28 @@ export function getDom() {
     browseButton: document.querySelector("#browse-button"),
     fileInput: document.querySelector("#file-input"),
     dropZone: document.querySelector("#drop-zone"),
-    processButton: document.querySelector("#process-button"),
+    extractButton: document.querySelector("#extract-button"),
+    mergeButton: document.querySelector("#merge-button"),
+    clearButton: document.querySelector("#clear-button"),
     downloadButton: document.querySelector("#download-button"),
     printButton: document.querySelector("#print-button"),
-    layoutSelect: document.querySelector("#layout-select"),
+    progressStack: document.querySelector("#progress-stack"),
+    extractProgressBar: document.querySelector("#extract-progress-bar"),
+    extractProgressText: document.querySelector("#extract-progress-text"),
+    mergeProgressBar: document.querySelector("#merge-progress-bar"),
+    mergeProgressText: document.querySelector("#merge-progress-text"),
     status: document.querySelector("#status"),
     sourceList: document.querySelector("#source-list"),
+    labelsPanel: document.querySelector("#labels-panel"),
+    toggleLabelsButton: document.querySelector("#toggle-labels-button"),
     labelGrid: document.querySelector("#label-grid"),
     mergedPreview: document.querySelector("#merged-preview"),
+    previewModal: document.querySelector("#preview-modal"),
+    modalBackdrop: document.querySelector("#modal-backdrop"),
+    closeModalButton: document.querySelector("#close-modal-button"),
+    modalTitle: document.querySelector("#modal-title"),
+    modalCaption: document.querySelector("#modal-caption"),
+    modalImage: document.querySelector("#modal-image"),
     sourceSummary: document.querySelector("#source-summary"),
     extractSummary: document.querySelector("#extract-summary"),
     mergedSummary: document.querySelector("#merged-summary"),
@@ -63,7 +77,7 @@ export function wireDropZone(dom, onFiles) {
   });
 }
 
-export function renderSourceFiles(dom, files) {
+export function renderSourceFiles(dom, files, layouts) {
   dom.fileCount.textContent = String(files.length);
   dom.sourceSummary.textContent = files.length
     ? `${files.length} PDF${files.length === 1 ? "" : "s"} ready`
@@ -85,16 +99,41 @@ export function renderSourceFiles(dom, files) {
               .map(
                 (page) => `
                   <div>
-                    <img class="thumb" src="${page.dataUrl}" alt="Preview of ${escapeHtml(file.file.name)} page ${page.pageNumber}" />
+                    <button
+                      class="page-thumb-button"
+                      type="button"
+                      data-preview-src="${page.fullDataUrl ?? page.dataUrl}"
+                      data-preview-title="${escapeHtml(file.file.name)}"
+                      data-preview-caption="Source page ${page.pageNumber}"
+                    >
+                      <img class="thumb" src="${page.dataUrl}" alt="Preview of ${escapeHtml(file.file.name)} page ${page.pageNumber}" />
+                    </button>
                     <div class="thumb-label">Page ${page.pageNumber}</div>
                   </div>
                 `,
               )
               .join("")}
           </div>
-          <div>
-            <strong>${escapeHtml(file.file.name)}</strong>
+          <div class="file-card-meta">
+            <div class="file-card-header">
+              <strong>${escapeHtml(file.file.name)}</strong>
+              <span class="badge">${escapeHtml(getLayoutLabel(layouts, file.documentType))}</span>
+            </div>
             <p>${file.thumbnails.length} page${file.thumbnails.length === 1 ? "" : "s"} • ${(file.file.size / 1024).toFixed(1)} KB</p>
+            <label class="field">
+              <span>Document type</span>
+              <select data-file-type-select data-file-id="${escapeHtml(file.id)}">
+                ${layouts
+                  .map(
+                    (layout) => `
+                      <option value="${layout.id}" ${layout.id === file.documentType ? "selected" : ""}>
+                        ${escapeHtml(layout.name)}
+                      </option>
+                    `,
+                  )
+                  .join("")}
+              </select>
+            </label>
           </div>
         </article>
       `;
@@ -118,8 +157,16 @@ export function renderLabels(dom, labels) {
   dom.labelGrid.innerHTML = labels
     .map(
       (label, index) => `
-        <article class="preview-card">
-          <img class="thumb" src="${label.previewDataUrl}" alt="Label ${index + 1}" />
+        <article class="preview-card is-draggable" draggable="true" data-label-id="${escapeHtml(label.id)}">
+          <button
+            class="thumb-button"
+            type="button"
+            data-preview-src="${label.previewDataUrl}"
+            data-preview-title="Label ${index + 1}"
+            data-preview-caption="${escapeHtml(label.sourceFileName)} • page ${label.sourcePage}"
+          >
+            <img class="thumb" src="${label.previewDataUrl}" alt="Label ${index + 1}" />
+          </button>
           <p>Label ${index + 1}<br />${escapeHtml(label.sourceFileName)} • page ${label.sourcePage}</p>
         </article>
       `,
@@ -142,7 +189,15 @@ export async function renderMergedPreview(dom, mergedBuffer) {
     .map(
       (page) => `
         <article class="preview-card">
-          <img class="merged-page" src="${page.dataUrl}" alt="Merged PDF page ${page.pageNumber}" />
+          <button
+            class="page-thumb-button"
+            type="button"
+            data-preview-src="${page.dataUrl}"
+            data-preview-title="Merged PDF"
+            data-preview-caption="Output page ${page.pageNumber}"
+          >
+            <img class="merged-page" src="${page.dataUrl}" alt="Merged PDF page ${page.pageNumber}" />
+          </button>
           <p>Output page ${page.pageNumber}</p>
         </article>
       `,
@@ -154,14 +209,62 @@ export function setStatus(dom, message) {
   dom.status.textContent = message;
 }
 
-export function setActionState(dom, { canProcess, canExport }) {
-  dom.processButton.disabled = !canProcess;
+export function setProgress(dom, key, { value, total, label }) {
+  const safeTotal = Math.max(total, 0);
+  const safeValue = Math.min(Math.max(value, 0), safeTotal || 0);
+  const percent = safeTotal > 0 ? (safeValue / safeTotal) * 100 : 0;
+  const bar = key === "extract" ? dom.extractProgressBar : dom.mergeProgressBar;
+  const text = key === "extract" ? dom.extractProgressText : dom.mergeProgressText;
+
+  bar.style.width = `${percent}%`;
+  text.textContent = label ?? (safeTotal > 0 ? `${safeValue}/${safeTotal}` : "Idle");
+}
+
+export function setActionState(dom, { canExtract, canMerge, canExport }) {
+  dom.extractButton.disabled = !canExtract;
+  dom.mergeButton.disabled = !canMerge;
+  dom.clearButton.disabled = !(canExtract || canMerge || canExport);
   dom.downloadButton.disabled = !canExport;
   dom.printButton.disabled = !canExport;
 }
 
+export function setLabelsCollapsed(dom, collapsed) {
+  dom.labelsPanel.classList.toggle("is-collapsed", collapsed);
+  dom.toggleLabelsButton.textContent = collapsed ? "Expand" : "Collapse";
+  dom.toggleLabelsButton.setAttribute("aria-expanded", String(!collapsed));
+}
+
+export function openPreviewModal(dom, { src, title, caption }) {
+  dom.modalImage.src = src;
+  dom.modalImage.alt = title;
+  dom.modalTitle.textContent = title;
+  dom.modalCaption.textContent = caption ?? "";
+  dom.previewModal.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+export function closePreviewModal(dom) {
+  dom.previewModal.hidden = true;
+  dom.modalImage.src = "";
+  document.body.style.overflow = "";
+}
+
+export function clearDragState(dom) {
+  dom.labelGrid.querySelectorAll(".preview-card").forEach((card) => {
+    card.classList.remove("is-dragging", "is-drop-target");
+  });
+}
+
+export function setProgressVisibility(dom, visible) {
+  dom.progressStack.classList.toggle("is-hidden", !visible);
+}
+
+function getLayoutLabel(layouts, documentType) {
+  return layouts.find((layout) => layout.id === documentType)?.name ?? documentType;
+}
+
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")

@@ -11,7 +11,7 @@
   <body>
     <div class="app-shell">
       <header class="hero">
-        <div>
+        <div class="hero-copy">
           <p class="eyebrow">PDF Label Organizer</p>
           <h1>Split incoming label sheets and rebuild them into clean 2x2 pages.</h1>
           <p class="lede">
@@ -19,38 +19,39 @@
             quadrant sheets, and generate a merged PDF ready to download or print.
           </p>
         </div>
-        <div class="hero-card">
-          <div class="stat">
-            <span id="file-count">0</span>
-            <label>PDFs loaded</label>
-          </div>
-          <div class="stat">
-            <span id="label-count">0</span>
-            <label>Labels detected</label>
-          </div>
-        </div>
-      </header>
-
-      <main class="layout">
-        <section class="panel drop-panel">
+        <section class="hero-card">
           <div id="drop-zone" class="drop-zone" tabindex="0">
             <input id="file-input" type="file" accept="application/pdf" multiple hidden />
-            <p class="drop-title">Drop PDF files here</p>
+            <p class="drop-title">Drag PDF files here</p>
             <p class="drop-subtitle">or</p>
             <button id="browse-button" class="button button-secondary" type="button">
               Choose PDFs
             </button>
           </div>
+          <div class="hero-stats">
+            <div class="stat">
+              <span id="file-count">0</span>
+              <label>PDFs loaded</label>
+            </div>
+            <div class="stat">
+              <span id="label-count">0</span>
+              <label>Labels detected</label>
+            </div>
+          </div>
+        </section>
+      </header>
 
+      <main class="layout">
+        <section class="panel panel-wide action-panel">
           <div class="controls">
-            <label class="field">
-              <span>Layout strategy</span>
-              <select id="layout-select">
-                <option value="a4-quadrants">A4 quadrants</option>
-              </select>
-            </label>
-            <button id="process-button" class="button" type="button" disabled>
-              Split and merge
+            <button id="extract-button" class="button" type="button" disabled>
+              Extract labels
+            </button>
+            <button id="merge-button" class="button" type="button" disabled>
+              Merge labels
+            </button>
+            <button id="clear-button" class="button button-secondary" type="button" disabled>
+              Clear PDFs
             </button>
             <button id="download-button" class="button button-secondary" type="button" disabled>
               Download PDF
@@ -59,7 +60,26 @@
               Print PDF
             </button>
           </div>
-
+          <div id="progress-stack" class="progress-stack is-hidden">
+            <div class="progress-block">
+              <div class="progress-head">
+                <span>Extract progress</span>
+                <span id="extract-progress-text" class="progress-meta">Idle</span>
+              </div>
+              <div class="progress-track">
+                <div id="extract-progress-bar" class="progress-fill"></div>
+              </div>
+            </div>
+            <div class="progress-block">
+              <div class="progress-head">
+                <span>Merge progress</span>
+                <span id="merge-progress-text" class="progress-meta">Idle</span>
+              </div>
+              <div class="progress-track">
+                <div id="merge-progress-bar" class="progress-fill"></div>
+              </div>
+            </div>
+          </div>
           <div id="status" class="status">Waiting for PDF files.</div>
         </section>
 
@@ -73,10 +93,15 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section id="labels-panel" class="panel">
           <div class="section-head">
-            <h2>Extracted Labels</h2>
-            <span id="extract-summary" class="section-meta">Nothing extracted</span>
+            <div class="section-head-main">
+              <h2>Extracted Labels</h2>
+              <span id="extract-summary" class="section-meta">Nothing extracted</span>
+            </div>
+            <button id="toggle-labels-button" class="collapse-button" type="button" aria-expanded="true">
+              Collapse
+            </button>
           </div>
           <div id="label-grid" class="preview-grid empty-state">
             Extracted labels will appear here after processing.
@@ -93,6 +118,24 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div id="preview-modal" class="modal" hidden>
+      <div id="modal-backdrop" class="modal-backdrop"></div>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="modal-title">Preview</h2>
+            <p id="modal-caption" class="modal-caption"></p>
+          </div>
+          <button id="close-modal-button" class="collapse-button" type="button">
+            Close
+          </button>
+        </div>
+        <div class="modal-body">
+          <img id="modal-image" class="modal-image" alt="" />
+        </div>
+      </div>
     </div>
 
     <script type="module" src="./src/main.js"></script>
