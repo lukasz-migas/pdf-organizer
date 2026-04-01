@@ -24,8 +24,45 @@ export async function normalizeFiles(fileList) {
           ...page,
           fullDataUrl: fullPreviews[pageIndex],
         })),
-        documentType: "a4-quadrants",
+        documentType: inferDocumentType(file.name),
       };
     }),
   );
+}
+
+function inferDocumentType(filename) {
+  const normalized = filename.trim().toLowerCase();
+  const basename = normalized.replace(/\.pdf$/i, "");
+
+  if (normalized.startsWith("vinted")) {
+    return "whole-page";
+  }
+
+  if (looksHashLike(basename)) {
+    return "bottom-40-rotated";
+  }
+
+  return "a4-quadrants";
+}
+
+function looksHashLike(basename) {
+  if (basename.length < 10 || basename.length > 48) {
+    return false;
+  }
+
+  if (!/^[a-z0-9_-]+$/i.test(basename)) {
+    return false;
+  }
+
+  const stripped = basename.replaceAll("-", "").replaceAll("_", "");
+  if (stripped.length < 10) {
+    return false;
+  }
+
+  const hasLetters = /[a-z]/i.test(stripped);
+  const hasDigits = /\d/.test(stripped);
+  const vowelCount = (stripped.match(/[aeiou]/gi) ?? []).length;
+  const vowelRatio = vowelCount / stripped.length;
+
+  return hasLetters && hasDigits && vowelRatio < 0.25;
 }

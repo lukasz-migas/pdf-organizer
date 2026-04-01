@@ -1,5 +1,6 @@
 import { LabelLayoutStrategy } from "./base.js";
 import { renderPdfPageToCanvas } from "../pdf/preview.js";
+import { composeLabelsToGrid, createLabelRecord } from "./helpers.js";
 
 const { PDFDocument } = window.PDFLib;
 
@@ -53,18 +54,15 @@ export class A4QuadrantsLayout extends LabelLayoutStrategy {
 
         const pdfBytes = await labelPdf.save();
         const pdfBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
-        const thumbCanvas = await renderPdfPageToCanvas(pdfBuffer, 0, 0.48);
-
-        labels.push({
-          id: `${fileRecord.id}-p${pageIndex + 1}-${quadrant.key}`,
-          sourceFileId: fileRecord.id,
-          sourceFileName: fileRecord.file.name,
-          documentType: fileRecord.documentType,
-          sourcePage: pageIndex + 1,
-          quadrant: quadrant.key,
-          pdfBuffer,
-          previewDataUrl: thumbCanvas.toDataURL("image/png"),
-        });
+        labels.push(
+          await createLabelRecord({
+            id: `${fileRecord.id}-p${pageIndex + 1}-${quadrant.key}`,
+            fileRecord,
+            sourcePage: pageIndex + 1,
+            partKey: quadrant.key,
+            pdfBuffer,
+          }),
+        );
       }
     }
 
@@ -72,41 +70,7 @@ export class A4QuadrantsLayout extends LabelLayoutStrategy {
   }
 
   async composeOutput(labels) {
-    const outputPdf = await PDFDocument.create();
-
-    if (!labels.length) {
-      const bytes = await outputPdf.save();
-      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    }
-
-    const firstLabel = await PDFDocument.load(labels[0].pdfBuffer.slice(0));
-    const firstPage = firstLabel.getPage(0);
-    const { width: labelWidth, height: labelHeight } = firstPage.getSize();
-    const pageWidth = labelWidth * 2;
-    const pageHeight = labelHeight * 2;
-
-    for (let index = 0; index < labels.length; index += 4) {
-      const outputPage = outputPdf.addPage([pageWidth, pageHeight]);
-      const chunk = labels.slice(index, index + 4);
-
-      for (let chunkIndex = 0; chunkIndex < chunk.length; chunkIndex += 1) {
-        const label = chunk[chunkIndex];
-        const labelPdf = await PDFDocument.load(label.pdfBuffer.slice(0));
-        const labelPage = labelPdf.getPage(0);
-        const embedded = await outputPdf.embedPage(labelPage);
-        const placement = QUADRANTS[chunkIndex];
-
-        outputPage.drawPage(embedded, {
-          x: placement.xFactor * labelWidth,
-          y: placement.yFactor * labelHeight,
-          width: labelWidth,
-          height: labelHeight,
-        });
-      }
-    }
-
-    const bytes = await outputPdf.save();
-    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    return composeLabelsToGrid(labels);
   }
 }
 
