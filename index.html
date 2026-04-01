@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Label Organizer</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">PDF Label Organizer</p>
+          <h1>Split incoming label sheets and rebuild them into clean 2x2 pages.</h1>
+          <p class="lede">
+            Drag PDFs into the page, preview the originals, extract labels from A4
+            quadrant sheets, and generate a merged PDF ready to download or print.
+          </p>
+        </div>
+        <div class="hero-card">
+          <div class="stat">
+            <span id="file-count">0</span>
+            <label>PDFs loaded</label>
+          </div>
+          <div class="stat">
+            <span id="label-count">0</span>
+            <label>Labels detected</label>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel drop-panel">
+          <div id="drop-zone" class="drop-zone" tabindex="0">
+            <input id="file-input" type="file" accept="application/pdf" multiple hidden />
+            <p class="drop-title">Drop PDF files here</p>
+            <p class="drop-subtitle">or</p>
+            <button id="browse-button" class="button button-secondary" type="button">
+              Choose PDFs
+            </button>
+          </div>
+
+          <div class="controls">
+            <label class="field">
+              <span>Layout strategy</span>
+              <select id="layout-select">
+                <option value="a4-quadrants">A4 quadrants</option>
+              </select>
+            </label>
+            <button id="process-button" class="button" type="button" disabled>
+              Split and merge
+            </button>
+            <button id="download-button" class="button button-secondary" type="button" disabled>
+              Download PDF
+            </button>
+            <button id="print-button" class="button button-secondary" type="button" disabled>
+              Print PDF
+            </button>
+          </div>
+
+          <div id="status" class="status">Waiting for PDF files.</div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <h2>Source PDFs</h2>
+            <span id="source-summary" class="section-meta">No files yet</span>
+          </div>
+          <div id="source-list" class="file-list empty-state">
+            Uploaded PDFs will appear here.
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <h2>Extracted Labels</h2>
+            <span id="extract-summary" class="section-meta">Nothing extracted</span>
+          </div>
+          <div id="label-grid" class="preview-grid empty-state">
+            Extracted labels will appear here after processing.
+          </div>
+        </section>
+
+        <section class="panel panel-wide">
+          <div class="section-head">
+            <h2>Merged PDF</h2>
+            <span id="merged-summary" class="section-meta">No output yet</span>
+          </div>
+          <div id="merged-preview" class="merged-preview empty-state">
+            The rebuilt PDF preview will appear here.
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
