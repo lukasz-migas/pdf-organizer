@@ -479,6 +479,16 @@ export function createApp() {
   }
 
   function handleOutputPlanClick(event) {
+    const decrementButton = event.target.closest("[data-pattern-decrement]");
+    if (decrementButton) {
+      const patternId = decrementButton.dataset.patternDecrement;
+      const nextCount = Math.max(0, getOutputPlanCount(dom, patternId) - 1);
+      setOutputPlanCount(dom, patternId, nextCount);
+      updateOutputPlanSummary();
+      setStatus(dom, `${getOutputPatternById(patternId).name} set to ${nextCount}.`);
+      return;
+    }
+
     const incrementButton = event.target.closest("[data-pattern-increment]");
     if (incrementButton) {
       const patternId = incrementButton.dataset.patternIncrement;
@@ -488,22 +498,10 @@ export function createApp() {
       setStatus(dom, `${getOutputPatternById(patternId).name} set to ${nextCount}.`);
       return;
     }
-
-    const resetButton = event.target.closest("[data-pattern-reset]");
-    if (resetButton) {
-      const patternId = resetButton.dataset.patternReset;
-      setOutputPlanCount(dom, patternId, 0);
-      updateOutputPlanSummary();
-      setStatus(dom, `${getOutputPatternById(patternId).name} reset to 0.`);
-    }
   }
 
   function updateOutputPlanSummary() {
     const slotCount = outputPatterns.reduce((total, pattern) => {
-      if (pattern.slots.length >= 4) {
-        return total;
-      }
-
       const count = getOutputPlanCount(dom, pattern.id);
       return total + Math.max(0, count) * pattern.slots.length;
     }, 0);

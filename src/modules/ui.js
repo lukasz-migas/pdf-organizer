@@ -184,40 +184,43 @@ export function renderOutputPlanner(dom, patterns) {
     .map(
       (pattern) => `
         <article class="pattern-card" data-pattern-card="${escapeHtml(pattern.id)}">
-          <button
-            class="pattern-picker"
-            type="button"
-            data-pattern-increment="${escapeHtml(pattern.id)}"
-            aria-label="Add one ${escapeHtml(pattern.name)} output sheet"
-            title="Add one ${escapeHtml(pattern.name)} sheet"
-          >
-            <span class="pattern-card-top">
-              <span class="pattern-name">${escapeHtml(pattern.name)}</span>
-              <span class="pattern-grid" aria-hidden="true">
-                ${[0, 1, 2, 3]
-                  .map(
-                    (slot) => `
-                      <span class="pattern-cell ${pattern.slots.includes(slot) ? "is-filled" : ""}"></span>
-                    `,
-                  )
-                  .join("")}
-              </span>
+          <div class="pattern-card-top">
+            <span class="pattern-name">${escapeHtml(pattern.name)}</span>
+            <span class="pattern-grid" aria-hidden="true">
+              ${[0, 1, 2, 3]
+                .map(
+                  (slot) => `
+                    <span class="pattern-cell ${pattern.slots.includes(slot) ? "is-filled" : ""}"></span>
+                  `,
+                )
+                .join("")}
             </span>
-          </button>
+          </div>
           <div class="pattern-card-footer">
             <span class="pattern-count-pill">
               Count
               <strong data-pattern-count="${escapeHtml(pattern.id)}">0</strong>
             </span>
-            <button
-              class="pattern-reset"
-              type="button"
-              data-pattern-reset="${escapeHtml(pattern.id)}"
-              aria-label="Reset ${escapeHtml(pattern.name)} count to zero"
-              title="Reset to zero"
-            >
-              Reset
-            </button>
+            <div class="pattern-stepper" role="group" aria-label="${escapeHtml(pattern.name)} count controls">
+              <button
+                class="pattern-adjust"
+                type="button"
+                data-pattern-decrement="${escapeHtml(pattern.id)}"
+                aria-label="Remove one ${escapeHtml(pattern.name)} output sheet"
+                title="Remove one"
+              >
+                -
+              </button>
+              <button
+                class="pattern-adjust pattern-adjust-primary"
+                type="button"
+                data-pattern-increment="${escapeHtml(pattern.id)}"
+                aria-label="Add one ${escapeHtml(pattern.name)} output sheet"
+                title="Add one"
+              >
+                +
+              </button>
+            </div>
           </div>
         </article>
       `,
@@ -354,7 +357,7 @@ export function setOutputPlanSummary(dom, slotCount) {
     return;
   }
 
-  dom.outputPlanSummary.innerHTML = `Partial-sheet capacity: <strong class="planner-summary-value">${slotCount}</strong> label slot${slotCount === 1 ? "" : "s"}`;
+  dom.outputPlanSummary.innerHTML = `Planned capacity: <strong class="planner-summary-value">${slotCount}</strong> label slot${slotCount === 1 ? "" : "s"}`;
 }
 
 export function openPreviewModal(dom, { src, title, caption }) {

@@ -313,22 +313,6 @@ input {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.pattern-picker {
-  display: grid;
-  gap: 8px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.pattern-picker:hover .pattern-grid,
-.pattern-picker:hover .pattern-name {
-  opacity: 0.92;
-}
-
 .pattern-card-top {
   display: flex;
   justify-content: space-between;
@@ -346,6 +330,7 @@ input {
   justify-content: space-between;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .pattern-count-pill {
@@ -384,18 +369,35 @@ input {
   border-color: rgba(255, 140, 66, 0.95);
 }
 
-.pattern-reset {
-  min-height: 34px;
-  padding: 0 10px;
+.pattern-stepper {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.pattern-adjust {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 12px;
   border: 1px solid var(--line-strong);
-  border-radius: 999px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
   cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
-.pattern-reset:hover {
+.pattern-adjust:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.pattern-adjust-primary {
+  border-color: rgba(255, 140, 66, 0.45);
+  background: rgba(255, 140, 66, 0.16);
+}
+
+.pattern-adjust-primary:hover {
+  background: rgba(255, 140, 66, 0.24);
 }
 
 .button {
@@ -831,5 +833,38 @@ input {
 
   .modal {
     padding: 12px;
+  }
+
+  .planner-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .output-planner {
+    margin-top: 8px;
+  }
+
+  .pattern-card {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  .pattern-card-footer {
+    align-items: stretch;
+  }
+
+  .pattern-count-pill,
+  .pattern-stepper {
+    width: 100%;
+  }
+
+  .pattern-stepper {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pattern-adjust {
+    width: 100%;
   }
 }
