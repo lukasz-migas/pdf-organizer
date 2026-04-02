@@ -2,6 +2,18 @@
 
 An app for splitting, previewing, reordering, and merging PDF labels.
 
+![Screenshot of the app](./screenshot.jpg)
+
+## Supported file types
+
+The app currently accepts PDF files and supports these label extraction layouts:
+
+- `2x2`: an A4 page split into four equally spaced quadrants.
+- `1x1`: a whole-page label that should be treated as a single label.
+- `2x1 (cropped)`: a label taken from the bottom `40%` of an A4 page, trimmed horizontally, then rotated.
+
+Each uploaded PDF can be assigned a layout manually from the UI before extraction.
+
 ## Deploy
 
 This project is a static site. It can be deployed directly to:
