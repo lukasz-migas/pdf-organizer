@@ -9,6 +9,7 @@ export function getDom() {
     mergeButton: document.querySelector("#merge-button"),
     outputPlanPanel: document.querySelector("#output-plan-panel"),
     outputPlanner: document.querySelector("#output-planner"),
+    outputPlanSummary: document.querySelector("#output-plan-summary"),
     resetOutputPlanButton: document.querySelector("#reset-output-plan-button"),
     toggleOutputPlanButton: document.querySelector("#toggle-output-plan-button"),
     dividerToggle: document.querySelector("#divider-toggle"),
@@ -346,6 +347,14 @@ export function resetOutputPlanCounts(dom) {
   dom.outputPlanner.querySelectorAll("[data-pattern-count]").forEach((node) => {
     node.textContent = "0";
   });
+}
+
+export function setOutputPlanSummary(dom, slotCount) {
+  if (!dom.outputPlanSummary) {
+    return;
+  }
+
+  dom.outputPlanSummary.innerHTML = `Partial-sheet capacity: <strong class="planner-summary-value">${slotCount}</strong> label slot${slotCount === 1 ? "" : "s"}`;
 }
 
 export function openPreviewModal(dom, { src, title, caption }) {

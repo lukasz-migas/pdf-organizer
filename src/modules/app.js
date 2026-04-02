@@ -17,6 +17,7 @@ import {
   setLabelsCollapsed,
   setOutputPlanCount,
   setOutputPlanCollapsed,
+  setOutputPlanSummary,
   setProgress,
   setProgressVisibility,
   setSourceCollapsed,
@@ -35,6 +36,7 @@ export function createApp() {
   }
 
   renderOutputPlanner(dom, outputPatterns);
+  updateOutputPlanSummary();
   wireDropZone(dom, (fileList) => handleIncomingFiles(fileList));
 
   dom.browseButton.addEventListener("click", () => dom.fileInput.click());
@@ -444,6 +446,7 @@ export function createApp() {
     renderLabels(dom, state.labels);
     await resetMergedOutput();
     resetOutputPlanCounts(dom);
+    updateOutputPlanSummary();
     setLabelsCollapsed(dom, true);
     setProgressVisibility(dom, false);
     setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
@@ -471,6 +474,7 @@ export function createApp() {
 
   function resetOutputPlan() {
     resetOutputPlanCounts(dom);
+    updateOutputPlanSummary();
     setStatus(dom, "Output sheet plan reset. Standard 2x2 output will be used unless you set counts again.");
   }
 
@@ -480,6 +484,7 @@ export function createApp() {
       const patternId = incrementButton.dataset.patternIncrement;
       const nextCount = getOutputPlanCount(dom, patternId) + 1;
       setOutputPlanCount(dom, patternId, nextCount);
+      updateOutputPlanSummary();
       setStatus(dom, `${getOutputPatternById(patternId).name} set to ${nextCount}.`);
       return;
     }
@@ -488,8 +493,22 @@ export function createApp() {
     if (resetButton) {
       const patternId = resetButton.dataset.patternReset;
       setOutputPlanCount(dom, patternId, 0);
+      updateOutputPlanSummary();
       setStatus(dom, `${getOutputPatternById(patternId).name} reset to 0.`);
     }
+  }
+
+  function updateOutputPlanSummary() {
+    const slotCount = outputPatterns.reduce((total, pattern) => {
+      if (pattern.slots.length >= 4) {
+        return total;
+      }
+
+      const count = getOutputPlanCount(dom, pattern.id);
+      return total + Math.max(0, count) * pattern.slots.length;
+    }, 0);
+
+    setOutputPlanSummary(dom, slotCount);
   }
 
   function getMergeLayout() {

@@ -55,7 +55,7 @@ export async function composeLabelsToGrid(labels, options = {}) {
   }
 
   const fallbackSlots = slotPattern.length ? slotPattern : [0, 1, 2, 3];
-  const pagePlans = [...slotPlans];
+  const pagePlans = buildOrderedPagePlans(preparedLabels.length, slotPlans, fallbackSlots);
   let labelIndex = 0;
 
   while (labelIndex < preparedLabels.length) {
@@ -107,4 +107,60 @@ export async function composeLabelsToGrid(labels, options = {}) {
 
   const bytes = await outputPdf.save();
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+
+function buildOrderedPagePlans(labelCount, slotPlans, fallbackSlots) {
+  const fullPageSize = fallbackSlots.length;
+  const normalizedPlans = slotPlans.map((slots, index) => ({
+    slots,
+    size: slots.length,
+    index,
+    key: slots.join(","),
+  }));
+  const explicitCapacity = normalizedPlans.reduce((total, plan) => total + plan.size, 0);
+  const labelsOutsideExplicitPlans = Math.max(0, labelCount - explicitCapacity);
+  const fallbackFullPageCount = Math.floor(labelsOutsideExplicitPlans / fullPageSize);
+  const fallbackRemainder = labelsOutsideExplicitPlans % fullPageSize;
+
+  const fullPlans = normalizedPlans.filter((plan) => plan.size === fullPageSize).map((plan) => plan.slots);
+  const partialPlans = groupPartialPlans(normalizedPlans.filter((plan) => plan.size < fullPageSize));
+
+  for (let index = 0; index < fallbackFullPageCount; index += 1) {
+    fullPlans.push(fallbackSlots);
+  }
+
+  if (fallbackRemainder > 0) {
+    partialPlans.push(...groupPartialPlans([
+      {
+        slots: fallbackSlots.slice(0, fallbackRemainder),
+        size: fallbackRemainder,
+        index: normalizedPlans.length,
+        key: fallbackSlots.slice(0, fallbackRemainder).join(","),
+      },
+    ]));
+  }
+
+  return [...fullPlans, ...partialPlans];
+}
+
+function groupPartialPlans(partialPlans) {
+  const groupedPlans = new Map();
+
+  for (const plan of partialPlans) {
+    const existingGroup = groupedPlans.get(plan.key);
+    if (existingGroup) {
+      existingGroup.plans.push(plan.slots);
+      continue;
+    }
+
+    groupedPlans.set(plan.key, {
+      size: plan.size,
+      index: plan.index,
+      plans: [plan.slots],
+    });
+  }
+
+  return [...groupedPlans.values()]
+    .sort((left, right) => right.size - left.size || left.index - right.index)
+    .flatMap((group) => group.plans);
 }
