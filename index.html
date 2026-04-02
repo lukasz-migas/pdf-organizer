@@ -49,43 +49,44 @@
             <button id="merge-button" class="button" type="button" disabled>
               Merge labels
             </button>
-            <button id="clear-button" class="button button-secondary" type="button" disabled>
-              Clear PDFs
-            </button>
+            <label class="checkbox-field">
+              <input id="divider-toggle" type="checkbox" />
+              <span>Show quadrant dividers</span>
+            </label>
             <button id="download-button" class="button button-secondary" type="button" disabled>
               Download PDF
             </button>
             <button id="print-button" class="button button-secondary" type="button" disabled>
               Print PDF
             </button>
+            <div class="controls-spacer" aria-hidden="true"></div>
+            <button id="clear-button" class="button button-secondary" type="button" disabled>
+              Clear PDFs
+            </button>
           </div>
           <div id="progress-stack" class="progress-stack is-hidden">
             <div class="progress-block">
               <div class="progress-head">
-                <span>Extract progress</span>
-                <span id="extract-progress-text" class="progress-meta">Idle</span>
+                <span id="progress-phase">Idle</span>
+                <span id="progress-text" class="progress-meta">Idle</span>
               </div>
               <div class="progress-track">
-                <div id="extract-progress-bar" class="progress-fill"></div>
-              </div>
-            </div>
-            <div class="progress-block">
-              <div class="progress-head">
-                <span>Merge progress</span>
-                <span id="merge-progress-text" class="progress-meta">Idle</span>
-              </div>
-              <div class="progress-track">
-                <div id="merge-progress-bar" class="progress-fill"></div>
+                <div id="progress-bar" class="progress-fill"></div>
               </div>
             </div>
           </div>
           <div id="status" class="status">Waiting for PDF files.</div>
         </section>
 
-        <section class="panel">
+        <section id="source-panel" class="panel">
           <div class="section-head">
-            <h2>Source PDFs</h2>
-            <span id="source-summary" class="section-meta">No files yet</span>
+            <div class="section-head-main">
+              <h2>Source PDFs</h2>
+              <span id="source-summary" class="section-meta">No files yet</span>
+            </div>
+            <button id="toggle-source-button" class="collapse-button" type="button" aria-expanded="true">
+              Collapse
+            </button>
           </div>
           <div id="source-list" class="file-list empty-state">
             Uploaded PDFs will appear here.

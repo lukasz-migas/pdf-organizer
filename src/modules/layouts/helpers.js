@@ -1,6 +1,7 @@
 import { renderPdfPageToCanvas } from "../pdf/preview.js";
 
 const { PDFDocument } = window.PDFLib;
+const { rgb } = window.PDFLib;
 
 const GRID_POSITIONS = [
   { xFactor: 0, yFactor: 1 },
@@ -31,8 +32,9 @@ export async function createLabelRecord({
   };
 }
 
-export async function composeLabelsToGrid(labels) {
+export async function composeLabelsToGrid(labels, options = {}) {
   const outputPdf = await PDFDocument.create();
+  const { drawDividers = false } = options;
 
   if (!labels.length) {
     const bytes = await outputPdf.save();
@@ -53,7 +55,9 @@ export async function composeLabelsToGrid(labels) {
   }
 
   for (let index = 0; index < preparedLabels.length; index += 4) {
-    const outputPage = outputPdf.addPage([cellWidth * 2, cellHeight * 2]);
+    const pageWidth = cellWidth * 2;
+    const pageHeight = cellHeight * 2;
+    const outputPage = outputPdf.addPage([pageWidth, pageHeight]);
     const chunk = preparedLabels.slice(index, index + 4);
 
     for (let chunkIndex = 0; chunkIndex < chunk.length; chunkIndex += 1) {
@@ -73,9 +77,27 @@ export async function composeLabelsToGrid(labels) {
         height: drawHeight,
       });
     }
+
+    if (drawDividers) {
+      outputPage.drawRectangle({
+        x: pageWidth / 2 - 1,
+        y: 0,
+        width: 2,
+        height: pageHeight,
+        color: rgb(0.2, 0.2, 0.2),
+        opacity: 1,
+      });
+      outputPage.drawRectangle({
+        x: 0,
+        y: pageHeight / 2 - 1,
+        width: pageWidth,
+        height: 2,
+        color: rgb(0.2, 0.2, 0.2),
+        opacity: 1,
+      });
+    }
   }
 
   const bytes = await outputPdf.save();
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 }
-

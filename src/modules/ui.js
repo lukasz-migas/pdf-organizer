@@ -7,16 +7,18 @@ export function getDom() {
     dropZone: document.querySelector("#drop-zone"),
     extractButton: document.querySelector("#extract-button"),
     mergeButton: document.querySelector("#merge-button"),
+    dividerToggle: document.querySelector("#divider-toggle"),
     clearButton: document.querySelector("#clear-button"),
     downloadButton: document.querySelector("#download-button"),
     printButton: document.querySelector("#print-button"),
     progressStack: document.querySelector("#progress-stack"),
-    extractProgressBar: document.querySelector("#extract-progress-bar"),
-    extractProgressText: document.querySelector("#extract-progress-text"),
-    mergeProgressBar: document.querySelector("#merge-progress-bar"),
-    mergeProgressText: document.querySelector("#merge-progress-text"),
+    progressBar: document.querySelector("#progress-bar"),
+    progressPhase: document.querySelector("#progress-phase"),
+    progressText: document.querySelector("#progress-text"),
     status: document.querySelector("#status"),
+    sourcePanel: document.querySelector("#source-panel"),
     sourceList: document.querySelector("#source-list"),
+    toggleSourceButton: document.querySelector("#toggle-source-button"),
     labelsPanel: document.querySelector("#labels-panel"),
     toggleLabelsButton: document.querySelector("#toggle-labels-button"),
     labelGrid: document.querySelector("#label-grid"),
@@ -240,15 +242,14 @@ export function setStatus(dom, message) {
   dom.status.textContent = message;
 }
 
-export function setProgress(dom, key, { value, total, label }) {
+export function setProgress(dom, { phase, value, total, label }) {
   const safeTotal = Math.max(total, 0);
   const safeValue = Math.min(Math.max(value, 0), safeTotal || 0);
   const percent = safeTotal > 0 ? (safeValue / safeTotal) * 100 : 0;
-  const bar = key === "extract" ? dom.extractProgressBar : dom.mergeProgressBar;
-  const text = key === "extract" ? dom.extractProgressText : dom.mergeProgressText;
 
-  bar.style.width = `${percent}%`;
-  text.textContent = label ?? (safeTotal > 0 ? `${safeValue}/${safeTotal}` : "Idle");
+  dom.progressBar.style.width = `${percent}%`;
+  dom.progressPhase.textContent = phase ?? "Idle";
+  dom.progressText.textContent = label ?? (safeTotal > 0 ? `${safeValue}/${safeTotal}` : "Idle");
 }
 
 export function setActionState(dom, { canExtract, canMerge, canExport }) {
@@ -263,6 +264,12 @@ export function setLabelsCollapsed(dom, collapsed) {
   dom.labelsPanel.classList.toggle("is-collapsed", collapsed);
   dom.toggleLabelsButton.textContent = collapsed ? "Expand" : "Collapse";
   dom.toggleLabelsButton.setAttribute("aria-expanded", String(!collapsed));
+}
+
+export function setSourceCollapsed(dom, collapsed) {
+  dom.sourcePanel.classList.toggle("is-collapsed", collapsed);
+  dom.toggleSourceButton.textContent = collapsed ? "Expand" : "Collapse";
+  dom.toggleSourceButton.setAttribute("aria-expanded", String(!collapsed));
 }
 
 export function openPreviewModal(dom, { src, title, caption }) {

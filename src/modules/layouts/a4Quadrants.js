@@ -69,8 +69,8 @@ export class A4QuadrantsLayout extends LabelLayoutStrategy {
     return labels;
   }
 
-  async composeOutput(labels) {
-    return composeLabelsToGrid(labels);
+  async composeOutput(labels, options) {
+    return composeLabelsToGrid(labels, options);
   }
 }
 

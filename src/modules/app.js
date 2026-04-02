@@ -13,6 +13,7 @@ import {
   setLabelsCollapsed,
   setProgress,
   setProgressVisibility,
+  setSourceCollapsed,
   setStatus,
   wireDropZone,
 } from "./ui.js";
@@ -52,6 +53,10 @@ export function createApp() {
   dom.labelGrid.addEventListener("dragleave", (event) => handleLabelDragLeave(event));
   dom.labelGrid.addEventListener("drop", (event) => handleLabelDrop(event));
   dom.labelGrid.addEventListener("dragend", () => clearDragState(dom));
+  dom.toggleSourceButton.addEventListener("click", () => {
+    state.sourceCollapsed = !state.sourceCollapsed;
+    setSourceCollapsed(dom, state.sourceCollapsed);
+  });
   dom.toggleLabelsButton.addEventListener("click", () => {
     state.labelsCollapsed = !state.labelsCollapsed;
     setLabelsCollapsed(dom, state.labelsCollapsed);
@@ -65,10 +70,10 @@ export function createApp() {
   });
 
   setActionState(dom, { canExtract: false, canMerge: false, canExport: false });
+  setSourceCollapsed(dom, false);
   setLabelsCollapsed(dom, true);
   setProgressVisibility(dom, false);
-  setProgress(dom, "extract", { value: 0, total: 0, label: "Idle" });
-  setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+  setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
 
   let draggedLabelId = null;
 
@@ -84,6 +89,8 @@ export function createApp() {
       }
 
       setStatus(dom, "Loading source PDF previews...");
+      setProgressVisibility(dom, true);
+      setProgress(dom, { phase: "Loading", value: 0, total: validFiles.length, label: "Starting" });
       const normalizedFiles = await normalizeFiles(validFiles);
       state.files = [...state.files, ...normalizedFiles];
       state.labels = [];
@@ -91,15 +98,16 @@ export function createApp() {
 
       renderSourceFiles(dom, state.files, layouts);
       renderLabels(dom, state.labels);
+      setSourceCollapsed(dom, state.sourceCollapsed);
       state.labelsCollapsed = true;
       setLabelsCollapsed(dom, true);
       setProgressVisibility(dom, false);
-      setProgress(dom, "extract", { value: 0, total: state.files.length, label: "Ready" });
-      setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+      setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
       setActionState(dom, { canExtract: state.files.length > 0, canMerge: false, canExport: false });
       setStatus(dom, `${state.files.length} PDF file${state.files.length === 1 ? "" : "s"} ready.`);
     } catch (error) {
       console.error(error);
+      setProgressVisibility(dom, false);
       setStatus(dom, `Could not load PDF files: ${error.message}`);
     }
   }
@@ -113,8 +121,7 @@ export function createApp() {
       setStatus(dom, "Extracting labels...");
       setActionState(dom, { canExtract: false, canMerge: false, canExport: false });
       setProgressVisibility(dom, true);
-      setProgress(dom, "extract", { value: 0, total: state.files.length, label: "Starting" });
-      setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+      setProgress(dom, { phase: "Extracting", value: 0, total: state.files.length, label: "Starting" });
 
       const extractedLabels = [];
 
@@ -124,7 +131,8 @@ export function createApp() {
         const labels = await layout.extractLabels(file);
         extractedLabels.push(...labels);
         renderLabels(dom, extractedLabels);
-        setProgress(dom, "extract", {
+        setProgress(dom, {
+          phase: "Extracting",
           value: index + 1,
           total: state.files.length,
           label: `${index + 1}/${state.files.length} files`,
@@ -135,7 +143,7 @@ export function createApp() {
       state.labels = extractedLabels;
       if (!state.labels.length) {
         await resetMergedOutput();
-        setProgress(dom, "extract", { value: state.files.length, total: state.files.length, label: "No labels found" });
+        setProgress(dom, { phase: "Extracting", value: state.files.length, total: state.files.length, label: "No labels found" });
         setProgressVisibility(dom, false);
         setActionState(dom, { canExtract: state.files.length > 0, canMerge: false, canExport: false });
         setStatus(dom, "No non-blank labels were detected.");
@@ -144,7 +152,8 @@ export function createApp() {
 
       state.labelsCollapsed = false;
       setLabelsCollapsed(dom, false);
-      setProgress(dom, "extract", {
+      setProgress(dom, {
+        phase: "Extracting",
         value: state.files.length,
         total: state.files.length,
         label: `${state.labels.length} labels ready`,
@@ -158,7 +167,7 @@ export function createApp() {
       setStatus(dom, `Done. ${state.labels.length} labels extracted and ready to merge.`);
     } catch (error) {
       console.error(error);
-      setProgress(dom, "extract", { value: 0, total: state.files.length, label: "Failed" });
+      setProgress(dom, { phase: "Extracting", value: 0, total: state.files.length, label: "Failed" });
       setProgressVisibility(dom, false);
       setActionState(dom, {
         canExtract: state.files.length > 0,
@@ -178,15 +187,17 @@ export function createApp() {
       setStatus(dom, "Building merged PDF...");
       setActionState(dom, { canExtract: false, canMerge: false, canExport: false });
       setProgressVisibility(dom, true);
-      setProgress(dom, "merge", { value: 0, total: 1, label: "Building" });
+      setProgress(dom, { phase: "Merging", value: 0, total: 1, label: "Building" });
 
       const layout = getMergeLayout();
-      const mergedBuffer = await layout.composeOutput(state.labels);
-      setProgress(dom, "merge", { value: 1, total: 1, label: "Rendering preview" });
+      const mergedBuffer = await layout.composeOutput(state.labels, {
+        drawDividers: dom.dividerToggle.checked,
+      });
+      setProgress(dom, { phase: "Merging", value: 1, total: 1, label: "Rendering preview" });
       state.merged = createBlobRecord(mergedBuffer, "organized-labels.pdf");
 
       await renderMergedPreview(dom, mergedBuffer);
-      setProgress(dom, "merge", { value: 1, total: 1, label: "Complete" });
+      setProgress(dom, { phase: "Merging", value: 1, total: 1, label: "Complete" });
       setActionState(dom, {
         canExtract: state.files.length > 0,
         canMerge: state.labels.length > 0,
@@ -196,7 +207,7 @@ export function createApp() {
       setStatus(dom, `Done. ${state.labels.length} labels merged into a new output PDF.`);
     } catch (error) {
       console.error(error);
-      setProgress(dom, "merge", { value: 0, total: 1, label: "Failed" });
+      setProgress(dom, { phase: "Merging", value: 0, total: 1, label: "Failed" });
       setProgressVisibility(dom, false);
       setActionState(dom, {
         canExtract: state.files.length > 0,
@@ -274,9 +285,9 @@ export function createApp() {
     state.labelsCollapsed = true;
     setLabelsCollapsed(dom, true);
     setProgressVisibility(dom, false);
-    setProgress(dom, "extract", { value: 0, total: state.files.length, label: "Ready" });
-    setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+    setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
     renderSourceFiles(dom, state.files, layouts);
+    setSourceCollapsed(dom, state.sourceCollapsed);
     setActionState(dom, { canExtract: state.files.length > 0, canMerge: false, canExport: false });
     setStatus(dom, `Updated ${file.file.name} to ${getLayoutById(file.documentType).name}.`);
   }
@@ -296,13 +307,13 @@ export function createApp() {
     state.files = state.files.filter((entry) => entry.id !== fileId);
     state.labels = [];
     renderSourceFiles(dom, state.files, layouts);
+    setSourceCollapsed(dom, state.sourceCollapsed);
     renderLabels(dom, state.labels);
     await resetMergedOutput();
     state.labelsCollapsed = true;
     setLabelsCollapsed(dom, true);
     setProgressVisibility(dom, false);
-    setProgress(dom, "extract", { value: 0, total: state.files.length, label: state.files.length ? "Ready" : "Idle" });
-    setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+    setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
     setActionState(dom, {
       canExtract: state.files.length > 0,
       canMerge: false,
@@ -393,7 +404,7 @@ export function createApp() {
     renderLabels(dom, state.labels);
     await resetMergedOutput();
     setProgressVisibility(dom, false);
-    setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+    setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
     setActionState(dom, {
       canExtract: state.files.length > 0,
       canMerge: state.labels.length > 0,
@@ -406,14 +417,15 @@ export function createApp() {
   async function clearAllFiles() {
     state.files = [];
     state.labels = [];
+    state.sourceCollapsed = false;
     state.labelsCollapsed = true;
     renderSourceFiles(dom, state.files, layouts);
+    setSourceCollapsed(dom, state.sourceCollapsed);
     renderLabels(dom, state.labels);
     await resetMergedOutput();
     setLabelsCollapsed(dom, true);
     setProgressVisibility(dom, false);
-    setProgress(dom, "extract", { value: 0, total: 0, label: "Idle" });
-    setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+    setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
     setActionState(dom, { canExtract: false, canMerge: false, canExport: false });
     setStatus(dom, "Waiting for PDF files.");
     dom.fileInput.value = "";
