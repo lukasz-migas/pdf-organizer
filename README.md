@@ -4,11 +4,13 @@ An app for splitting, previewing, reordering, and merging PDF labels.
 
 ## Why does this app exist?
 
-My wife has an online shop, and she sends a lot of parcels via Royal Mail. For some crazy reason, when Royal Mail generates the labels (in a 2x2 grid), they are very rarely properly arranged, so you often end up with odd sheets that are partially used. 
+This app was built to solve a very specific shipping-label problem.
 
-The aim of this mini-app is to automatically split Royal Mail (and Vinted, eBay, ...) labels, and then merge them in a logical format into a 2x2 grid.
+My wife runs an online [shop](https://folkandfortune.co.uk/) and sends a lot of parcels through Royal Mail. The generated label PDFs often come in awkward layouts, especially as 2x2 sheets that are not arranged in a practical order for printing. That quickly leads to wasted label paper and half-used sheets.
 
-Optionally, if you have partially used sheets, you can specify them in the `Output sheet plan`, so that they are used in the process.
+The app takes those source PDFs, splits the labels automatically, and rebuilds them into a cleaner 2x2 output that is easier to print and use. It also works well for labels from services such as Royal Mail, Vinted, and eBay.
+
+If you already have partially used label sheets, you can describe that in the `Output sheet plan` so the app fills the remaining spaces instead of wasting more paper.
 
 
 [Available online](https://lukasz-migas.github.io/pdf-organizer/)

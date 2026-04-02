@@ -1,5 +1,3 @@
 import { renderFooter } from "./modules/footer.js";
-import { createApp } from "./modules/app.js";
 
 renderFooter();
-createApp();
