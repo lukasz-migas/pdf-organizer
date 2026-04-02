@@ -266,6 +266,22 @@ input {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.pattern-picker {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pattern-picker:hover .pattern-grid,
+.pattern-picker:hover .pattern-name {
+  opacity: 0.92;
+}
+
 .pattern-card-top {
   display: flex;
   justify-content: space-between;
@@ -276,6 +292,31 @@ input {
 .pattern-name {
   font-size: 0.78rem;
   color: var(--muted);
+}
+
+.pattern-card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.pattern-count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.pattern-count-pill strong {
+  color: var(--text);
+  font-size: 0.95rem;
 }
 
 .pattern-grid {
@@ -296,14 +337,18 @@ input {
   border-color: rgba(255, 140, 66, 0.95);
 }
 
-.pattern-count {
-  width: 100%;
-  min-height: 38px;
+.pattern-reset {
+  min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  background: #0c1a22;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
+  cursor: pointer;
+}
+
+.pattern-reset:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .button {

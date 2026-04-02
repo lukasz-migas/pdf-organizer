@@ -182,29 +182,43 @@ export function renderOutputPlanner(dom, patterns) {
   dom.outputPlanner.innerHTML = patterns
     .map(
       (pattern) => `
-        <label class="pattern-card">
-          <div class="pattern-card-top">
-            <span class="pattern-name">${escapeHtml(pattern.name)}</span>
-            <span class="pattern-grid" aria-hidden="true">
-              ${[0, 1, 2, 3]
-                .map(
-                  (slot) => `
-                    <span class="pattern-cell ${pattern.slots.includes(slot) ? "is-filled" : ""}"></span>
-                  `,
-                )
-                .join("")}
+        <article class="pattern-card" data-pattern-card="${escapeHtml(pattern.id)}">
+          <button
+            class="pattern-picker"
+            type="button"
+            data-pattern-increment="${escapeHtml(pattern.id)}"
+            aria-label="Add one ${escapeHtml(pattern.name)} output sheet"
+            title="Add one ${escapeHtml(pattern.name)} sheet"
+          >
+            <span class="pattern-card-top">
+              <span class="pattern-name">${escapeHtml(pattern.name)}</span>
+              <span class="pattern-grid" aria-hidden="true">
+                ${[0, 1, 2, 3]
+                  .map(
+                    (slot) => `
+                      <span class="pattern-cell ${pattern.slots.includes(slot) ? "is-filled" : ""}"></span>
+                    `,
+                  )
+                  .join("")}
+              </span>
             </span>
+          </button>
+          <div class="pattern-card-footer">
+            <span class="pattern-count-pill">
+              Count
+              <strong data-pattern-count="${escapeHtml(pattern.id)}">0</strong>
+            </span>
+            <button
+              class="pattern-reset"
+              type="button"
+              data-pattern-reset="${escapeHtml(pattern.id)}"
+              aria-label="Reset ${escapeHtml(pattern.name)} count to zero"
+              title="Reset to zero"
+            >
+              Reset
+            </button>
           </div>
-          <input
-            class="pattern-count"
-            type="number"
-            min="0"
-            step="1"
-            value="0"
-            data-pattern-id="${escapeHtml(pattern.id)}"
-            aria-label="${escapeHtml(pattern.name)} page count"
-          />
-        </label>
+        </article>
       `,
     )
     .join("");
@@ -312,6 +326,26 @@ export function setOutputPlanCollapsed(dom, collapsed) {
   dom.outputPlanPanel.classList.toggle("is-collapsed", collapsed);
   dom.toggleOutputPlanButton.textContent = collapsed ? "Expand" : "Collapse";
   dom.toggleOutputPlanButton.setAttribute("aria-expanded", String(!collapsed));
+}
+
+export function getOutputPlanCount(dom, patternId) {
+  const node = dom.outputPlanner.querySelector(`[data-pattern-count="${patternId}"]`);
+  return Number.parseInt(node?.textContent ?? "0", 10) || 0;
+}
+
+export function setOutputPlanCount(dom, patternId, count) {
+  const node = dom.outputPlanner.querySelector(`[data-pattern-count="${patternId}"]`);
+  if (!node) {
+    return;
+  }
+
+  node.textContent = String(Math.max(0, count));
+}
+
+export function resetOutputPlanCounts(dom) {
+  dom.outputPlanner.querySelectorAll("[data-pattern-count]").forEach((node) => {
+    node.textContent = "0";
+  });
 }
 
 export function openPreviewModal(dom, { src, title, caption }) {

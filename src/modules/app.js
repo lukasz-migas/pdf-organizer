@@ -10,9 +10,12 @@ import {
   renderLabels,
   renderMergedPreview,
   renderOutputPlanner,
+  getOutputPlanCount,
+  resetOutputPlanCounts,
   renderSourceFiles,
   setActionState,
   setLabelsCollapsed,
+  setOutputPlanCount,
   setOutputPlanCollapsed,
   setProgress,
   setProgressVisibility,
@@ -42,6 +45,7 @@ export function createApp() {
   dom.extractButton.addEventListener("click", () => extractLabels());
   dom.mergeButton.addEventListener("click", () => mergeLabels());
   dom.resetOutputPlanButton.addEventListener("click", () => resetOutputPlan());
+  dom.outputPlanner.addEventListener("click", (event) => handleOutputPlanClick(event));
   dom.toggleOutputPlanButton.addEventListener("click", () => {
     state.outputPlanCollapsed = !state.outputPlanCollapsed;
     setOutputPlanCollapsed(dom, state.outputPlanCollapsed);
@@ -439,6 +443,7 @@ export function createApp() {
     setSourceCollapsed(dom, state.sourceCollapsed);
     renderLabels(dom, state.labels);
     await resetMergedOutput();
+    resetOutputPlanCounts(dom);
     setLabelsCollapsed(dom, true);
     setProgressVisibility(dom, false);
     setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
@@ -448,16 +453,14 @@ export function createApp() {
   }
 
   function getRequestedSlotPlans() {
-    const inputs = Array.from(dom.outputPlanner.querySelectorAll("[data-pattern-id]"));
     const plans = [];
 
-    for (const input of inputs) {
-      const count = Number.parseInt(input.value, 10);
+    for (const pattern of outputPatterns) {
+      const count = getOutputPlanCount(dom, pattern.id);
       if (!Number.isFinite(count) || count <= 0) {
         continue;
       }
 
-      const pattern = getOutputPatternById(input.dataset.patternId);
       for (let index = 0; index < count; index += 1) {
         plans.push(pattern.slots);
       }
@@ -467,10 +470,26 @@ export function createApp() {
   }
 
   function resetOutputPlan() {
-    dom.outputPlanner.querySelectorAll("[data-pattern-id]").forEach((input) => {
-      input.value = "0";
-    });
+    resetOutputPlanCounts(dom);
     setStatus(dom, "Output sheet plan reset. Standard 2x2 output will be used unless you set counts again.");
+  }
+
+  function handleOutputPlanClick(event) {
+    const incrementButton = event.target.closest("[data-pattern-increment]");
+    if (incrementButton) {
+      const patternId = incrementButton.dataset.patternIncrement;
+      const nextCount = getOutputPlanCount(dom, patternId) + 1;
+      setOutputPlanCount(dom, patternId, nextCount);
+      setStatus(dom, `${getOutputPatternById(patternId).name} set to ${nextCount}.`);
+      return;
+    }
+
+    const resetButton = event.target.closest("[data-pattern-reset]");
+    if (resetButton) {
+      const patternId = resetButton.dataset.patternReset;
+      setOutputPlanCount(dom, patternId, 0);
+      setStatus(dom, `${getOutputPatternById(patternId).name} reset to 0.`);
+    }
   }
 
   function getMergeLayout() {
