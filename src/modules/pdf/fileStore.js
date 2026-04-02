@@ -24,15 +24,20 @@ export async function normalizeFiles(fileList) {
           ...page,
           fullDataUrl: fullPreviews[pageIndex],
         })),
-        documentType: inferDocumentType(file.name),
+        documentType: inferDocumentType(file),
       };
     }),
   );
 }
 
-function inferDocumentType(filename) {
+function inferDocumentType(file) {
+  const filename = file.name;
   const normalized = filename.trim().toLowerCase();
   const basename = normalized.replace(/\.pdf$/i, "");
+
+  if (basename.startsWith("vinted-")) {
+    return file.size < 100 * 1024 ? "whole-page" : "bottom-40-rotated";
+  }
 
   if (basename.startsWith("returnlabel")) {
     return "whole-page";

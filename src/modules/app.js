@@ -223,21 +223,29 @@ export function createApp() {
       return;
     }
 
-    const printFrame = document.createElement("iframe");
-    printFrame.style.position = "fixed";
-    printFrame.style.right = "0";
-    printFrame.style.bottom = "0";
-    printFrame.style.width = "0";
-    printFrame.style.height = "0";
-    printFrame.style.border = "0";
-    printFrame.src = state.merged.url;
-    document.body.appendChild(printFrame);
+    const printWindow = window.open(state.merged.url, "_blank", "noopener,noreferrer");
 
-    printFrame.onload = () => {
-      printFrame.contentWindow?.focus();
-      printFrame.contentWindow?.print();
-      setTimeout(() => printFrame.remove(), 1000);
+    if (!printWindow) {
+      setStatus(dom, "Print popup was blocked. Allow popups or download the PDF and print it manually.");
+      return;
+    }
+
+    setStatus(dom, "Opening PDF in a temporary window for printing...");
+
+    const triggerPrint = () => {
+      setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+          setStatus(dom, "Print dialog opened.");
+        } catch (error) {
+          console.error(error);
+          setStatus(dom, "Direct print failed. Download the PDF and print it manually.");
+        }
+      }, 800);
     };
+
+    printWindow.addEventListener("load", triggerPrint, { once: true });
   }
 
   async function resetMergedOutput() {
