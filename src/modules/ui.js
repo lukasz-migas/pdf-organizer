@@ -7,6 +7,8 @@ export function getDom() {
     dropZone: document.querySelector("#drop-zone"),
     extractButton: document.querySelector("#extract-button"),
     mergeButton: document.querySelector("#merge-button"),
+    outputPlanner: document.querySelector("#output-planner"),
+    resetOutputPlanButton: document.querySelector("#reset-output-plan-button"),
     dividerToggle: document.querySelector("#divider-toggle"),
     clearButton: document.querySelector("#clear-button"),
     downloadButton: document.querySelector("#download-button"),
@@ -171,6 +173,38 @@ export function renderSourceFiles(dom, files, layouts) {
         </article>
       `;
     })
+    .join("");
+}
+
+export function renderOutputPlanner(dom, patterns) {
+  dom.outputPlanner.innerHTML = patterns
+    .map(
+      (pattern) => `
+        <label class="pattern-card">
+          <div class="pattern-card-top">
+            <span class="pattern-name">${escapeHtml(pattern.name)}</span>
+            <span class="pattern-grid" aria-hidden="true">
+              ${[0, 1, 2, 3]
+                .map(
+                  (slot) => `
+                    <span class="pattern-cell ${pattern.slots.includes(slot) ? "is-filled" : ""}"></span>
+                  `,
+                )
+                .join("")}
+            </span>
+          </div>
+          <input
+            class="pattern-count"
+            type="number"
+            min="0"
+            step="1"
+            value="0"
+            data-pattern-id="${escapeHtml(pattern.id)}"
+            aria-label="${escapeHtml(pattern.name)} page count"
+          />
+        </label>
+      `,
+    )
     .join("");
 }
 

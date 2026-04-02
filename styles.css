@@ -221,6 +221,80 @@ input {
   white-space: nowrap;
 }
 
+.output-planner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.planner-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  color: var(--text);
+}
+
+.planner-head-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.planner-meta {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.pattern-card {
+  display: grid;
+  gap: 8px;
+  min-width: 110px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pattern-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.pattern-name {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 12px);
+  grid-template-rows: repeat(2, 12px);
+  gap: 3px;
+}
+
+.pattern-cell {
+  border-radius: 2px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pattern-cell.is-filled {
+  background: rgba(255, 140, 66, 0.85);
+  border-color: rgba(255, 140, 66, 0.95);
+}
+
+.pattern-count {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #0c1a22;
+  color: var(--text);
+}
+
 .button {
   min-height: 44px;
   padding: 0 18px;
@@ -630,7 +704,8 @@ input {
 
   .section-head,
   .section-head-main,
-  .progress-head {
+  .progress-head,
+  .planner-head {
     align-items: start;
     flex-direction: column;
   }

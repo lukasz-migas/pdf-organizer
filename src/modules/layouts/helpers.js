@@ -34,7 +34,7 @@ export async function createLabelRecord({
 
 export async function composeLabelsToGrid(labels, options = {}) {
   const outputPdf = await PDFDocument.create();
-  const { drawDividers = false } = options;
+  const { drawDividers = false, slotPattern = [0, 1, 2, 3], slotPlans = [] } = options;
 
   if (!labels.length) {
     const bytes = await outputPdf.save();
@@ -54,16 +54,21 @@ export async function composeLabelsToGrid(labels, options = {}) {
     cellHeight = Math.max(cellHeight, height);
   }
 
-  for (let index = 0; index < preparedLabels.length; index += 4) {
+  const fallbackSlots = slotPattern.length ? slotPattern : [0, 1, 2, 3];
+  const pagePlans = [...slotPlans];
+  let labelIndex = 0;
+
+  while (labelIndex < preparedLabels.length) {
+    const activeSlots = pagePlans.shift() ?? fallbackSlots;
     const pageWidth = cellWidth * 2;
     const pageHeight = cellHeight * 2;
     const outputPage = outputPdf.addPage([pageWidth, pageHeight]);
-    const chunk = preparedLabels.slice(index, index + 4);
+    const chunk = preparedLabels.slice(labelIndex, labelIndex + activeSlots.length);
 
     for (let chunkIndex = 0; chunkIndex < chunk.length; chunkIndex += 1) {
       const prepared = chunk[chunkIndex];
       const embedded = await outputPdf.embedPage(prepared.labelPage);
-      const placement = GRID_POSITIONS[chunkIndex];
+      const placement = GRID_POSITIONS[activeSlots[chunkIndex]];
       const scale = Math.min(cellWidth / prepared.width, cellHeight / prepared.height);
       const drawWidth = prepared.width * scale;
       const drawHeight = prepared.height * scale;
@@ -96,6 +101,8 @@ export async function composeLabelsToGrid(labels, options = {}) {
         opacity: 1,
       });
     }
+
+    labelIndex += activeSlots.length;
   }
 
   const bytes = await outputPdf.save();

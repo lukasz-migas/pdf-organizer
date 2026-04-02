@@ -1,6 +1,7 @@
 import { createState } from "./state.js";
 import { normalizeFiles } from "./pdf/fileStore.js";
 import { getLayoutById, getLayouts } from "./layoutRegistry.js";
+import { getOutputPatternById, getOutputPatterns } from "./outputPatterns.js";
 import {
   clearDragState,
   closePreviewModal,
@@ -8,6 +9,7 @@ import {
   openPreviewModal,
   renderLabels,
   renderMergedPreview,
+  renderOutputPlanner,
   renderSourceFiles,
   setActionState,
   setLabelsCollapsed,
@@ -22,11 +24,13 @@ export function createApp() {
   const state = createState();
   const dom = getDom();
   const layouts = getLayouts();
+  const outputPatterns = getOutputPatterns();
 
   if (window.location.protocol === "file:") {
     setStatus(dom, "Run this app through a local web server, for example: python3 -m http.server 8000");
   }
 
+  renderOutputPlanner(dom, outputPatterns);
   wireDropZone(dom, (fileList) => handleIncomingFiles(fileList));
 
   dom.browseButton.addEventListener("click", () => dom.fileInput.click());
@@ -36,6 +40,7 @@ export function createApp() {
   });
   dom.extractButton.addEventListener("click", () => extractLabels());
   dom.mergeButton.addEventListener("click", () => mergeLabels());
+  dom.resetOutputPlanButton.addEventListener("click", () => resetOutputPlan());
   dom.clearButton.addEventListener("click", () => clearAllFiles());
   dom.downloadButton.addEventListener("click", () => downloadMergedPdf());
   dom.printButton.addEventListener("click", () => printMergedPdf());
@@ -190,8 +195,11 @@ export function createApp() {
       setProgress(dom, { phase: "Merging", value: 0, total: 1, label: "Building" });
 
       const layout = getMergeLayout();
+      const slotPlans = getRequestedSlotPlans();
       const mergedBuffer = await layout.composeOutput(state.labels, {
         drawDividers: dom.dividerToggle.checked,
+        slotPattern: getOutputPatternById("full-4").slots,
+        slotPlans,
       });
       setProgress(dom, { phase: "Merging", value: 1, total: 1, label: "Rendering preview" });
       state.merged = createBlobRecord(mergedBuffer, "organized-labels.pdf");
@@ -429,6 +437,32 @@ export function createApp() {
     setActionState(dom, { canExtract: false, canMerge: false, canExport: false });
     setStatus(dom, "Waiting for PDF files.");
     dom.fileInput.value = "";
+  }
+
+  function getRequestedSlotPlans() {
+    const inputs = Array.from(dom.outputPlanner.querySelectorAll("[data-pattern-id]"));
+    const plans = [];
+
+    for (const input of inputs) {
+      const count = Number.parseInt(input.value, 10);
+      if (!Number.isFinite(count) || count <= 0) {
+        continue;
+      }
+
+      const pattern = getOutputPatternById(input.dataset.patternId);
+      for (let index = 0; index < count; index += 1) {
+        plans.push(pattern.slots);
+      }
+    }
+
+    return plans;
+  }
+
+  function resetOutputPlan() {
+    dom.outputPlanner.querySelectorAll("[data-pattern-id]").forEach((input) => {
+      input.value = "0";
+    });
+    setStatus(dom, "Output sheet plan reset. Standard 2x2 output will be used unless you set counts again.");
   }
 
   function getMergeLayout() {
