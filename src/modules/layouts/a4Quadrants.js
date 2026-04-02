@@ -13,7 +13,7 @@ const QUADRANTS = [
 
 export class A4QuadrantsLayout extends LabelLayoutStrategy {
   constructor() {
-    super({ id: "a4-quadrants", name: "A4 quadrants" });
+    super({ id: "a4-quadrants", name: "2x2" });
   }
 
   async extractLabels(fileRecord) {

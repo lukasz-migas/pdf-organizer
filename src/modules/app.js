@@ -39,7 +39,12 @@ export function createApp() {
   dom.downloadButton.addEventListener("click", () => downloadMergedPdf());
   dom.printButton.addEventListener("click", () => printMergedPdf());
   dom.sourceList.addEventListener("change", async (event) => handleFileTypeChange(event));
-  dom.sourceList.addEventListener("click", (event) => handlePreviewClick(event));
+  dom.sourceList.addEventListener("click", async (event) => {
+    if (await handleRemoveFile(event)) {
+      return;
+    }
+    handlePreviewClick(event);
+  });
   dom.labelGrid.addEventListener("click", (event) => handlePreviewClick(event));
   dom.mergedPreview.addEventListener("click", (event) => handlePreviewClick(event));
   dom.labelGrid.addEventListener("dragstart", (event) => handleLabelDragStart(event));
@@ -266,6 +271,42 @@ export function createApp() {
     renderSourceFiles(dom, state.files, layouts);
     setActionState(dom, { canExtract: state.files.length > 0, canMerge: false, canExport: false });
     setStatus(dom, `Updated ${file.file.name} to ${getLayoutById(file.documentType).name}.`);
+  }
+
+  async function handleRemoveFile(event) {
+    const button = event.target.closest("[data-remove-file-id]");
+    if (!button) {
+      return false;
+    }
+
+    const fileId = button.dataset.removeFileId;
+    const removedFile = state.files.find((entry) => entry.id === fileId);
+    if (!removedFile) {
+      return true;
+    }
+
+    state.files = state.files.filter((entry) => entry.id !== fileId);
+    state.labels = [];
+    renderSourceFiles(dom, state.files, layouts);
+    renderLabels(dom, state.labels);
+    await resetMergedOutput();
+    state.labelsCollapsed = true;
+    setLabelsCollapsed(dom, true);
+    setProgressVisibility(dom, false);
+    setProgress(dom, "extract", { value: 0, total: state.files.length, label: state.files.length ? "Ready" : "Idle" });
+    setProgress(dom, "merge", { value: 0, total: 0, label: "Idle" });
+    setActionState(dom, {
+      canExtract: state.files.length > 0,
+      canMerge: false,
+      canExport: false,
+    });
+    setStatus(
+      dom,
+      state.files.length
+        ? `Removed ${removedFile.file.name}. Extract labels again to rebuild the working set.`
+        : "Waiting for PDF files.",
+    );
+    return true;
   }
 
   function handlePreviewClick(event) {

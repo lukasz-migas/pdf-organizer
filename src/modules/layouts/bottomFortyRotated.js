@@ -10,7 +10,7 @@ const RIGHT_TRIM_PORTION = 0.12;
 
 export class BottomFortyRotatedLayout extends LabelLayoutStrategy {
   constructor() {
-    super({ id: "bottom-40-rotated", name: "Bottom 40% rotated" });
+    super({ id: "bottom-40-rotated", name: "2x1 (cropped)" });
   }
 
   async extractLabels(fileRecord) {

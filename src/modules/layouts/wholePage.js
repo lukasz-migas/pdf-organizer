@@ -5,7 +5,7 @@ const { PDFDocument } = window.PDFLib;
 
 export class WholePageLayout extends LabelLayoutStrategy {
   constructor() {
-    super({ id: "whole-page", name: "Whole-page label" });
+    super({ id: "whole-page", name: "1x1" });
   }
 
   async extractLabels(fileRecord) {
@@ -46,4 +46,3 @@ export class WholePageLayout extends LabelLayoutStrategy {
     return composeLabelsToGrid(labels);
   }
 }
-

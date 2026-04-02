@@ -51,6 +51,28 @@ export function wireDropZone(dom, onFiles) {
   });
 
   ["dragenter", "dragover"].forEach((eventName) => {
+    window.addEventListener(eventName, (event) => {
+      if (event.dataTransfer?.types?.includes("Files")) {
+        activate();
+      }
+    });
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    window.addEventListener(eventName, (event) => {
+      if (eventName === "drop" || event.relatedTarget === null) {
+        deactivate();
+      }
+    });
+  });
+
+  window.addEventListener("drop", (event) => {
+    if (event.dataTransfer?.files?.length) {
+      onFiles(event.dataTransfer.files);
+    }
+  });
+
+  ["dragenter", "dragover"].forEach((eventName) => {
     dom.dropZone.addEventListener(eventName, (event) => {
       preventWindowDrop(event);
       activate();
@@ -63,8 +85,6 @@ export function wireDropZone(dom, onFiles) {
       deactivate();
     });
   });
-
-  dom.dropZone.addEventListener("drop", (event) => onFiles(event.dataTransfer.files));
   dom.dropZone.addEventListener("click", (event) => {
     if (event.target !== dom.fileInput) {
       dom.fileInput.click();
@@ -117,7 +137,18 @@ export function renderSourceFiles(dom, files, layouts) {
           <div class="file-card-meta">
             <div class="file-card-header">
               <strong>${escapeHtml(file.file.name)}</strong>
-              <span class="badge">${escapeHtml(getLayoutLabel(layouts, file.documentType))}</span>
+              <div class="file-card-actions">
+                <span class="badge">${escapeHtml(getLayoutLabel(layouts, file.documentType))}</span>
+                <button
+                  class="icon-button"
+                  type="button"
+                  data-remove-file-id="${escapeHtml(file.id)}"
+                  aria-label="Remove ${escapeHtml(file.file.name)}"
+                  title="Remove PDF"
+                >
+                  <span class="trash-icon" aria-hidden="true"></span>
+                </button>
+              </div>
             </div>
             <p>${file.thumbnails.length} page${file.thumbnails.length === 1 ? "" : "s"} • ${(file.file.size / 1024).toFixed(1)} KB</p>
             <label class="field">

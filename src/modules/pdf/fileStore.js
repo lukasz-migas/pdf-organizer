@@ -34,11 +34,15 @@ function inferDocumentType(filename) {
   const normalized = filename.trim().toLowerCase();
   const basename = normalized.replace(/\.pdf$/i, "");
 
-  if (normalized.startsWith("vinted")) {
+  if (basename.startsWith("returnlabel")) {
     return "whole-page";
   }
 
-  if (looksHashLike(basename)) {
+  if (basename.startsWith("order-") || basename.startsWith("orders-") || basename.startsWith("ebay")) {
+    return "a4-quadrants";
+  }
+
+  if (basename.startsWith("vinted") || looksHashLike(basename)) {
     return "bottom-40-rotated";
   }
 
