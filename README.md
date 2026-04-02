@@ -2,6 +2,8 @@
 
 An app for splitting, previewing, reordering, and merging PDF labels.
 
+[Available online](https://lukasz-migas.github.io/pdf-organizer/)
+
 ![Screenshot of the app](./screenshot.jpg)
 
 ## Supported file types
