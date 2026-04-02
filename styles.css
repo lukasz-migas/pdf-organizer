@@ -227,6 +227,10 @@ input {
   gap: 12px;
 }
 
+.output-plan-panel.is-collapsed #output-planner {
+  display: none;
+}
+
 .planner-head {
   display: flex;
   justify-content: space-between;
@@ -238,6 +242,13 @@ input {
 .planner-head-copy {
   display: grid;
   gap: 4px;
+}
+
+.planner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .planner-meta {

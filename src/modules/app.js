@@ -13,6 +13,7 @@ import {
   renderSourceFiles,
   setActionState,
   setLabelsCollapsed,
+  setOutputPlanCollapsed,
   setProgress,
   setProgressVisibility,
   setSourceCollapsed,
@@ -41,6 +42,10 @@ export function createApp() {
   dom.extractButton.addEventListener("click", () => extractLabels());
   dom.mergeButton.addEventListener("click", () => mergeLabels());
   dom.resetOutputPlanButton.addEventListener("click", () => resetOutputPlan());
+  dom.toggleOutputPlanButton.addEventListener("click", () => {
+    state.outputPlanCollapsed = !state.outputPlanCollapsed;
+    setOutputPlanCollapsed(dom, state.outputPlanCollapsed);
+  });
   dom.clearButton.addEventListener("click", () => clearAllFiles());
   dom.downloadButton.addEventListener("click", () => downloadMergedPdf());
   dom.printButton.addEventListener("click", () => printMergedPdf());
@@ -75,6 +80,7 @@ export function createApp() {
   });
 
   setActionState(dom, { canExtract: false, canMerge: false, canExport: false });
+  setOutputPlanCollapsed(dom, true);
   setSourceCollapsed(dom, false);
   setLabelsCollapsed(dom, true);
   setProgressVisibility(dom, false);
@@ -425,9 +431,11 @@ export function createApp() {
   async function clearAllFiles() {
     state.files = [];
     state.labels = [];
+    state.outputPlanCollapsed = true;
     state.sourceCollapsed = false;
     state.labelsCollapsed = true;
     renderSourceFiles(dom, state.files, layouts);
+    setOutputPlanCollapsed(dom, true);
     setSourceCollapsed(dom, state.sourceCollapsed);
     renderLabels(dom, state.labels);
     await resetMergedOutput();

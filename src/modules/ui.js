@@ -7,8 +7,10 @@ export function getDom() {
     dropZone: document.querySelector("#drop-zone"),
     extractButton: document.querySelector("#extract-button"),
     mergeButton: document.querySelector("#merge-button"),
+    outputPlanPanel: document.querySelector("#output-plan-panel"),
     outputPlanner: document.querySelector("#output-planner"),
     resetOutputPlanButton: document.querySelector("#reset-output-plan-button"),
+    toggleOutputPlanButton: document.querySelector("#toggle-output-plan-button"),
     dividerToggle: document.querySelector("#divider-toggle"),
     clearButton: document.querySelector("#clear-button"),
     downloadButton: document.querySelector("#download-button"),
@@ -304,6 +306,12 @@ export function setSourceCollapsed(dom, collapsed) {
   dom.sourcePanel.classList.toggle("is-collapsed", collapsed);
   dom.toggleSourceButton.textContent = collapsed ? "Expand" : "Collapse";
   dom.toggleSourceButton.setAttribute("aria-expanded", String(!collapsed));
+}
+
+export function setOutputPlanCollapsed(dom, collapsed) {
+  dom.outputPlanPanel.classList.toggle("is-collapsed", collapsed);
+  dom.toggleOutputPlanButton.textContent = collapsed ? "Expand" : "Collapse";
+  dom.toggleOutputPlanButton.setAttribute("aria-expanded", String(!collapsed));
 }
 
 export function openPreviewModal(dom, { src, title, caption }) {
