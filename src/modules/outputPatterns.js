@@ -4,6 +4,8 @@ const outputPatterns = [
   { id: "gap-bottom-right", name: "3-up BL", slots: [0, 1, 2] },
   { id: "top-row", name: "2-up Top", slots: [0, 1] },
   { id: "left-column", name: "2-up Left", slots: [0, 2] },
+  { id: "diagonal-top-left", name: "2-up TL+BR", slots: [0, 3] },
+  { id: "diagonal-top-right", name: "2-up TR+BL", slots: [1, 2] },
   { id: "single-top-left", name: "1-up TL", slots: [0] },
   { id: "single-top-right", name: "1-up TR", slots: [1] },
 ];
