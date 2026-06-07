@@ -1,5 +1,10 @@
-import { renderPdfToThumbnails } from "./pdf/preview.js";
+import { renderPdfPreviewPages } from "./pdf/preview.js";
 
+/**
+ * Collect the DOM nodes used by the app.
+ *
+ * @returns {object}
+ */
 export function getDom() {
   return {
     browseButton: document.querySelector("#browse-button"),
@@ -33,7 +38,10 @@ export function getDom() {
     closeModalButton: document.querySelector("#close-modal-button"),
     modalTitle: document.querySelector("#modal-title"),
     modalCaption: document.querySelector("#modal-caption"),
+    modalPosition: document.querySelector("#modal-position"),
     modalImage: document.querySelector("#modal-image"),
+    previousModalButton: document.querySelector("#modal-previous-button"),
+    nextModalButton: document.querySelector("#modal-next-button"),
     sourceSummary: document.querySelector("#source-summary"),
     extractSummary: document.querySelector("#extract-summary"),
     mergedSummary: document.querySelector("#merged-summary"),
@@ -104,6 +112,14 @@ export function wireDropZone(dom, onFiles) {
   });
 }
 
+/**
+ * Render uploaded source PDFs and page thumbnails.
+ *
+ * @param {object} dom
+ * @param {Array<object>} files
+ * @param {Array<object>} layouts
+ * @returns {void}
+ */
 export function renderSourceFiles(dom, files, layouts) {
   dom.fileCount.textContent = String(files.length);
   dom.sourceSummary.textContent = files.length
@@ -129,9 +145,9 @@ export function renderSourceFiles(dom, files, layouts) {
                     <button
                       class="page-thumb-button"
                       type="button"
-                      data-preview-src="${page.fullDataUrl ?? page.dataUrl}"
-                      data-preview-title="${escapeHtml(file.file.name)}"
-                      data-preview-caption="Source page ${page.pageNumber}"
+                      data-preview-type="source"
+                      data-preview-file-id="${escapeHtml(file.id)}"
+                      data-preview-index="${page.pageNumber - 1}"
                     >
                       <img class="thumb" src="${page.dataUrl}" alt="Preview of ${escapeHtml(file.file.name)} page ${page.pageNumber}" />
                     </button>
@@ -157,7 +173,7 @@ export function renderSourceFiles(dom, files, layouts) {
                 </button>
               </div>
             </div>
-            <p>${file.thumbnails.length} page${file.thumbnails.length === 1 ? "" : "s"} • ${(file.file.size / 1024).toFixed(1)} KB</p>
+            <p>${file.thumbnails.length} page${file.thumbnails.length === 1 ? "" : "s"} - ${(file.file.size / 1024).toFixed(1)} KB</p>
             <label class="field">
               <span>Document type</span>
               <select data-file-type-select data-file-id="${escapeHtml(file.id)}">
@@ -228,6 +244,13 @@ export function renderOutputPlanner(dom, patterns) {
     .join("");
 }
 
+/**
+ * Render extracted label thumbnails in their current order.
+ *
+ * @param {object} dom
+ * @param {Array<object>} labels
+ * @returns {void}
+ */
 export function renderLabels(dom, labels) {
   dom.labelCount.textContent = String(labels.length);
   dom.extractSummary.textContent = labels.length
@@ -248,28 +271,37 @@ export function renderLabels(dom, labels) {
           <button
             class="thumb-button"
             type="button"
-            data-preview-src="${label.previewDataUrl}"
-            data-preview-title="Label ${index + 1}"
-            data-preview-caption="${escapeHtml(label.sourceFileName)} • page ${label.sourcePage}"
+            data-preview-type="labels"
+            data-preview-index="${index}"
           >
             <img class="thumb" src="${label.previewDataUrl}" alt="Label ${index + 1}" />
           </button>
-          <p>Label ${index + 1}<br />${escapeHtml(label.sourceFileName)} • page ${label.sourcePage}</p>
+          <p>Label ${index + 1}<br />${escapeHtml(label.sourceFileName)} - page ${label.sourcePage}</p>
         </article>
       `,
     )
     .join("");
 }
 
+/**
+ * Render merged output thumbnails and return modal-quality preview data.
+ *
+ * @param {object} dom
+ * @param {ArrayBuffer | null} mergedBuffer
+ * @returns {Promise<Array<object>>}
+ */
 export async function renderMergedPreview(dom, mergedBuffer) {
   if (!mergedBuffer) {
     dom.mergedSummary.textContent = "No output yet";
     dom.mergedPreview.className = "merged-preview empty-state";
     dom.mergedPreview.textContent = "The rebuilt PDF preview will appear here.";
-    return;
+    return [];
   }
 
-  const pages = await renderPdfToThumbnails(mergedBuffer, 0.22);
+  const pages = await renderPdfPreviewPages(mergedBuffer, {
+    thumbnailScale: 0.22,
+    previewScale: 1.2,
+  });
   dom.mergedSummary.textContent = `${pages.length} output page${pages.length === 1 ? "" : "s"}`;
   dom.mergedPreview.className = "merged-preview";
   dom.mergedPreview.innerHTML = pages
@@ -279,9 +311,8 @@ export async function renderMergedPreview(dom, mergedBuffer) {
           <button
             class="page-thumb-button"
             type="button"
-            data-preview-src="${page.dataUrl}"
-            data-preview-title="Merged PDF"
-            data-preview-caption="Output page ${page.pageNumber}"
+            data-preview-type="merged"
+            data-preview-index="${page.pageNumber - 1}"
           >
             <img class="merged-page" src="${page.dataUrl}" alt="Merged PDF page ${page.pageNumber}" />
           </button>
@@ -290,6 +321,8 @@ export async function renderMergedPreview(dom, mergedBuffer) {
       `,
     )
     .join("");
+
+  return pages;
 }
 
 export function setStatus(dom, message) {
@@ -360,18 +393,49 @@ export function setOutputPlanSummary(dom, slotCount) {
   dom.outputPlanSummary.innerHTML = `Planned capacity: <strong class="planner-summary-value">${slotCount}</strong> label slot${slotCount === 1 ? "" : "s"}`;
 }
 
-export function openPreviewModal(dom, { src, title, caption }) {
+/**
+ * Open or update the preview modal.
+ *
+ * @param {object} dom
+ * @param {object} preview
+ * @param {string} preview.src
+ * @param {string} preview.title
+ * @param {string} [preview.caption]
+ * @param {number} [preview.index]
+ * @param {number} [preview.total]
+ * @returns {void}
+ */
+export function openPreviewModal(dom, { src, title, caption, index = 0, total = 1 }) {
+  const safeTotal = Math.max(total, 1);
+  const safeIndex = Math.min(Math.max(index, 0), safeTotal - 1);
+
   dom.modalImage.src = src;
   dom.modalImage.alt = title;
   dom.modalTitle.textContent = title;
   dom.modalCaption.textContent = caption ?? "";
+  dom.modalPosition.textContent = `${safeIndex + 1} / ${safeTotal}`;
+  setModalNavigationState(dom, {
+    canMovePrevious: safeIndex > 0,
+    canMoveNext: safeIndex < safeTotal - 1,
+  });
   dom.previewModal.hidden = false;
   document.body.style.overflow = "hidden";
 }
 
+/**
+ * Close the preview modal and reset modal controls.
+ *
+ * @param {object} dom
+ * @returns {void}
+ */
 export function closePreviewModal(dom) {
   dom.previewModal.hidden = true;
   dom.modalImage.src = "";
+  dom.modalPosition.textContent = "";
+  setModalNavigationState(dom, {
+    canMovePrevious: false,
+    canMoveNext: false,
+  });
   document.body.style.overflow = "";
 }
 
@@ -387,6 +451,13 @@ export function setProgressVisibility(dom, visible) {
 
 function getLayoutLabel(layouts, documentType) {
   return layouts.find((layout) => layout.id === documentType)?.name ?? documentType;
+}
+
+function setModalNavigationState(dom, { canMovePrevious, canMoveNext }) {
+  dom.previousModalButton.disabled = !canMovePrevious;
+  dom.previousModalButton.setAttribute("aria-disabled", String(!canMovePrevious));
+  dom.nextModalButton.disabled = !canMoveNext;
+  dom.nextModalButton.setAttribute("aria-disabled", String(!canMoveNext));
 }
 
 function escapeHtml(value) {

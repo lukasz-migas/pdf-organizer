@@ -153,12 +153,37 @@
             <h2 id="modal-title">Preview</h2>
             <p id="modal-caption" class="modal-caption"></p>
           </div>
-          <button id="close-modal-button" class="collapse-button" type="button">
-            Close
-          </button>
+          <div class="modal-actions">
+            <span id="modal-position" class="modal-position" aria-live="polite"></span>
+            <button id="close-modal-button" class="collapse-button" type="button">
+              Close
+            </button>
+          </div>
         </div>
         <div class="modal-body">
-          <img id="modal-image" class="modal-image" alt="" />
+          <button
+            id="modal-previous-button"
+            class="modal-nav-button"
+            type="button"
+            aria-label="Previous preview"
+            title="Previous preview"
+            disabled
+          >
+            <span class="chevron chevron-left" aria-hidden="true"></span>
+          </button>
+          <div class="modal-image-frame">
+            <img id="modal-image" class="modal-image" alt="" />
+          </div>
+          <button
+            id="modal-next-button"
+            class="modal-nav-button"
+            type="button"
+            aria-label="Next preview"
+            title="Next preview"
+            disabled
+          >
+            <span class="chevron chevron-right" aria-hidden="true"></span>
+          </button>
         </div>
       </div>
     </div>

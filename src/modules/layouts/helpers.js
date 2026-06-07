@@ -1,4 +1,4 @@
-import { renderPdfPageToCanvas } from "../pdf/preview.js";
+import { renderPdfPreviewPages } from "../pdf/preview.js";
 
 const { PDFDocument } = window.PDFLib;
 const { rgb } = window.PDFLib;
@@ -10,6 +10,19 @@ const GRID_POSITIONS = [
   { xFactor: 1, yFactor: 0 },
 ];
 
+/**
+ * Create one extracted label record with thumbnail and modal previews.
+ *
+ * @param {object} options
+ * @param {string} options.id
+ * @param {object} options.fileRecord
+ * @param {number} options.sourcePage
+ * @param {string} options.partKey
+ * @param {ArrayBuffer} options.pdfBuffer
+ * @param {number} [options.previewScale]
+ * @param {number} [options.fullPreviewScale]
+ * @returns {Promise<object>}
+ */
 export async function createLabelRecord({
   id,
   fileRecord,
@@ -17,8 +30,12 @@ export async function createLabelRecord({
   partKey,
   pdfBuffer,
   previewScale = 0.48,
+  fullPreviewScale = 1.45,
 }) {
-  const thumbCanvas = await renderPdfPageToCanvas(pdfBuffer, 0, previewScale);
+  const [previewPage] = await renderPdfPreviewPages(pdfBuffer, {
+    thumbnailScale: previewScale,
+    previewScale: fullPreviewScale,
+  });
 
   return {
     id,
@@ -28,10 +45,18 @@ export async function createLabelRecord({
     sourcePage,
     quadrant: partKey,
     pdfBuffer,
-    previewDataUrl: thumbCanvas.toDataURL("image/png"),
+    previewDataUrl: previewPage.dataUrl,
+    fullPreviewDataUrl: previewPage.fullDataUrl,
   };
 }
 
+/**
+ * Compose extracted labels into output PDF pages.
+ *
+ * @param {Array<object>} labels
+ * @param {object} [options]
+ * @returns {Promise<ArrayBuffer>}
+ */
 export async function composeLabelsToGrid(labels, options = {}) {
   const outputPdf = await PDFDocument.create();
   const { drawDividers = false, slotPattern = [0, 1, 2, 3], slotPlans = [] } = options;

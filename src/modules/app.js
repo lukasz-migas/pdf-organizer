@@ -25,6 +25,18 @@ import {
   wireDropZone,
 } from "./ui.js";
 
+/**
+ * @typedef {object} PreviewItem
+ * @property {string} src
+ * @property {string} title
+ * @property {string} caption
+ */
+
+/**
+ * Create and wire the PDF organizer browser app.
+ *
+ * @returns {void}
+ */
 export function createApp() {
   const state = createState();
   const dom = getDom();
@@ -77,11 +89,29 @@ export function createApp() {
     state.labelsCollapsed = !state.labelsCollapsed;
     setLabelsCollapsed(dom, state.labelsCollapsed);
   });
-  dom.closeModalButton.addEventListener("click", () => closePreviewModal(dom));
-  dom.modalBackdrop.addEventListener("click", () => closePreviewModal(dom));
+  dom.previousModalButton.addEventListener("click", () => movePreview(-1));
+  dom.nextModalButton.addEventListener("click", () => movePreview(1));
+  dom.closeModalButton.addEventListener("click", () => closeActivePreview());
+  dom.modalBackdrop.addEventListener("click", () => closeActivePreview());
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !dom.previewModal.hidden) {
-      closePreviewModal(dom);
+    if (dom.previewModal.hidden) {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      closeActivePreview();
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      movePreview(-1);
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      movePreview(1);
     }
   });
 
@@ -216,7 +246,7 @@ export function createApp() {
       setProgress(dom, { phase: "Merging", value: 1, total: 1, label: "Rendering preview" });
       state.merged = createBlobRecord(mergedBuffer, "organized-labels.pdf");
 
-      await renderMergedPreview(dom, mergedBuffer);
+      state.mergedPreviewPages = await renderMergedPreview(dom, mergedBuffer);
       setProgress(dom, { phase: "Merging", value: 1, total: 1, label: "Complete" });
       setActionState(dom, {
         canExtract: state.files.length > 0,
@@ -284,6 +314,7 @@ export function createApp() {
       URL.revokeObjectURL(state.merged.url);
     }
     state.merged = null;
+    state.mergedPreviewPages = [];
     await renderMergedPreview(dom, null);
   }
 
@@ -349,16 +380,12 @@ export function createApp() {
   }
 
   function handlePreviewClick(event) {
-    const trigger = event.target.closest("[data-preview-src]");
+    const trigger = event.target.closest("[data-preview-type]");
     if (!trigger) {
       return;
     }
 
-    openPreviewModal(dom, {
-      src: trigger.dataset.previewSrc,
-      title: trigger.dataset.previewTitle ?? "Preview",
-      caption: trigger.dataset.previewCaption ?? "",
-    });
+    openPreviewAt(getPreviewItems(trigger), Number.parseInt(trigger.dataset.previewIndex ?? "0", 10) || 0);
   }
 
   function handleLabelDragStart(event) {
@@ -435,8 +462,10 @@ export function createApp() {
   }
 
   async function clearAllFiles() {
+    closeActivePreview();
     state.files = [];
     state.labels = [];
+    state.mergedPreviewPages = [];
     state.outputPlanCollapsed = true;
     state.sourceCollapsed = false;
     state.labelsCollapsed = true;
@@ -516,6 +545,103 @@ export function createApp() {
     }
 
     return getLayoutById(firstLabel.documentType);
+  }
+
+  /**
+   * Build the local preview list for a clicked thumbnail.
+   *
+   * @param {HTMLElement} trigger
+   * @returns {PreviewItem[]}
+   */
+  function getPreviewItems(trigger) {
+    const previewType = trigger.dataset.previewType;
+
+    if (previewType === "source") {
+      const file = state.files.find((entry) => entry.id === trigger.dataset.previewFileId);
+
+      if (!file) {
+        return [];
+      }
+
+      return file.thumbnails.map((page) => ({
+        src: page.fullDataUrl ?? page.dataUrl,
+        title: file.file.name,
+        caption: `Source page ${page.pageNumber}`,
+      }));
+    }
+
+    if (previewType === "labels") {
+      return state.labels.map((label, index) => ({
+        src: label.fullPreviewDataUrl ?? label.previewDataUrl,
+        title: `Label ${index + 1}`,
+        caption: `${label.sourceFileName} - page ${label.sourcePage}`,
+      }));
+    }
+
+    if (previewType === "merged") {
+      return state.mergedPreviewPages.map((page) => ({
+        src: page.fullDataUrl ?? page.dataUrl,
+        title: "Merged PDF",
+        caption: `Output page ${page.pageNumber}`,
+      }));
+    }
+
+    return [];
+  }
+
+  /**
+   * Open the modal at a specific preview item.
+   *
+   * @param {PreviewItem[]} items
+   * @param {number} index
+   * @returns {void}
+   */
+  function openPreviewAt(items, index) {
+    if (!items.length) {
+      return;
+    }
+
+    const safeIndex = Math.min(Math.max(index, 0), items.length - 1);
+    const item = items[safeIndex];
+    state.previewItems = items;
+    state.previewIndex = safeIndex;
+
+    openPreviewModal(dom, {
+      ...item,
+      index: safeIndex,
+      total: items.length,
+    });
+  }
+
+  /**
+   * Move within the current modal preview list.
+   *
+   * @param {number} step
+   * @returns {void}
+   */
+  function movePreview(step) {
+    if (dom.previewModal.hidden || !state.previewItems.length) {
+      return;
+    }
+
+    const nextIndex = Math.min(Math.max(state.previewIndex + step, 0), state.previewItems.length - 1);
+
+    if (nextIndex === state.previewIndex) {
+      return;
+    }
+
+    openPreviewAt(state.previewItems, nextIndex);
+  }
+
+  /**
+   * Close the modal and clear active preview state.
+   *
+   * @returns {void}
+   */
+  function closeActivePreview() {
+    state.previewItems = [];
+    state.previewIndex = 0;
+    closePreviewModal(dom);
   }
 }
 

@@ -1,5 +1,11 @@
-import { renderPdfPageToCanvas, renderPdfToThumbnails } from "./preview.js";
+import { renderPdfPreviewPages } from "./preview.js";
 
+/**
+ * Normalize PDF files into file records with source-page previews.
+ *
+ * @param {FileList | File[]} fileList
+ * @returns {Promise<Array<object>>}
+ */
 export async function normalizeFiles(fileList) {
   const files = Array.from(fileList).filter(
     (file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"),
@@ -8,22 +14,16 @@ export async function normalizeFiles(fileList) {
   return Promise.all(
     files.map(async (file, index) => {
       const arrayBuffer = await file.arrayBuffer();
-      const thumbnails = await renderPdfToThumbnails(arrayBuffer, 0.18);
-      const fullPreviews = await Promise.all(
-        thumbnails.map(async (_, pageIndex) => {
-          const canvas = await renderPdfPageToCanvas(arrayBuffer, pageIndex, 1.2);
-          return canvas.toDataURL("image/png");
-        }),
-      );
+      const thumbnails = await renderPdfPreviewPages(arrayBuffer, {
+        thumbnailScale: 0.18,
+        previewScale: 1.2,
+      });
 
       return {
         id: `${file.name}-${file.size}-${index}`,
         file,
         arrayBuffer,
-        thumbnails: thumbnails.map((page, pageIndex) => ({
-          ...page,
-          fullDataUrl: fullPreviews[pageIndex],
-        })),
+        thumbnails,
         documentType: inferDocumentType(file),
       };
     }),

@@ -783,14 +783,37 @@ input {
   margin: 0;
 }
 
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: end;
+}
+
 .modal-caption {
   margin: 6px 0 0;
   color: var(--muted);
 }
 
+.modal-position {
+  min-width: 54px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
 .modal-body {
   display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  gap: 14px;
   place-items: center;
+}
+
+.modal-image-frame {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  width: 100%;
 }
 
 .modal-image {
@@ -798,6 +821,57 @@ input {
   max-height: calc(100vh - 180px);
   border-radius: 16px;
   background: white;
+}
+
+.modal-nav-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.modal-nav-button:hover:enabled {
+  border-color: rgba(255, 176, 124, 0.45);
+  background: rgba(255, 176, 124, 0.12);
+}
+
+.modal-nav-button:focus-visible {
+  outline: 2px solid rgba(255, 176, 124, 0.85);
+  outline-offset: 2px;
+}
+
+.modal-nav-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.chevron {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+}
+
+.chevron-left {
+  transform: rotate(-135deg);
+  margin-left: 5px;
+}
+
+.chevron-right {
+  transform: rotate(45deg);
+  margin-right: 5px;
 }
 
 @media (max-width: 980px) {
@@ -833,6 +907,40 @@ input {
 
   .modal {
     padding: 12px;
+  }
+
+  .modal-head {
+    gap: 12px;
+  }
+
+  .modal-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .modal-position {
+    text-align: left;
+  }
+
+  .modal-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "image image"
+      "previous next";
+  }
+
+  .modal-image-frame {
+    grid-area: image;
+  }
+
+  #modal-previous-button {
+    grid-area: previous;
+    justify-self: start;
+  }
+
+  #modal-next-button {
+    grid-area: next;
+    justify-self: end;
   }
 
   .planner-actions {
