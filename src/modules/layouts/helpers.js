@@ -47,6 +47,7 @@ export async function createLabelRecord({
     pdfBuffer,
     previewDataUrl: previewPage.dataUrl,
     fullPreviewDataUrl: previewPage.fullDataUrl,
+    selected: true,
   };
 }
 

@@ -75,6 +75,7 @@ export function createApp() {
     handlePreviewClick(event);
   });
   dom.labelGrid.addEventListener("click", (event) => handlePreviewClick(event));
+  dom.labelGrid.addEventListener("change", async (event) => handleLabelSelectionChange(event));
   dom.mergedPreview.addEventListener("click", (event) => handlePreviewClick(event));
   dom.labelGrid.addEventListener("dragstart", (event) => handleLabelDragStart(event));
   dom.labelGrid.addEventListener("dragover", (event) => handleLabelDragOver(event));
@@ -89,6 +90,8 @@ export function createApp() {
     state.labelsCollapsed = !state.labelsCollapsed;
     setLabelsCollapsed(dom, state.labelsCollapsed);
   });
+  dom.checkAllLabelsButton.addEventListener("click", async () => selectAllLabels(true));
+  dom.uncheckAllLabelsButton.addEventListener("click", async () => selectAllLabels(false));
   dom.previousModalButton.addEventListener("click", () => movePreview(-1));
   dom.nextModalButton.addEventListener("click", () => movePreview(1));
   dom.closeModalButton.addEventListener("click", () => closeActivePreview());
@@ -207,7 +210,7 @@ export function createApp() {
       });
       setActionState(dom, {
         canExtract: state.files.length > 0,
-        canMerge: true,
+        canMerge: hasSelectedLabels(),
         canExport: false,
       });
       setProgressVisibility(dom, false);
@@ -218,7 +221,7 @@ export function createApp() {
       setProgressVisibility(dom, false);
       setActionState(dom, {
         canExtract: state.files.length > 0,
-        canMerge: state.labels.length > 0,
+        canMerge: hasSelectedLabels(),
         canExport: Boolean(state.merged),
       });
       setStatus(dom, `Extraction failed: ${error.message}`);
@@ -226,7 +229,9 @@ export function createApp() {
   }
 
   async function mergeLabels() {
-    if (!state.labels.length) {
+    const selectedLabels = getSelectedLabels();
+
+    if (!selectedLabels.length) {
       return;
     }
 
@@ -236,9 +241,9 @@ export function createApp() {
       setProgressVisibility(dom, true);
       setProgress(dom, { phase: "Merging", value: 0, total: 1, label: "Building" });
 
-      const layout = getMergeLayout();
+      const layout = getMergeLayout(selectedLabels);
       const slotPlans = getRequestedSlotPlans();
-      const mergedBuffer = await layout.composeOutput(state.labels, {
+      const mergedBuffer = await layout.composeOutput(selectedLabels, {
         drawDividers: dom.dividerToggle.checked,
         slotPattern: getOutputPatternById("full-4").slots,
         slotPlans,
@@ -250,18 +255,18 @@ export function createApp() {
       setProgress(dom, { phase: "Merging", value: 1, total: 1, label: "Complete" });
       setActionState(dom, {
         canExtract: state.files.length > 0,
-        canMerge: state.labels.length > 0,
+        canMerge: hasSelectedLabels(),
         canExport: true,
       });
       setProgressVisibility(dom, false);
-      setStatus(dom, `Done. ${state.labels.length} labels merged into a new output PDF.`);
+      setStatus(dom, `Done. ${selectedLabels.length} selected labels merged into a new output PDF.`);
     } catch (error) {
       console.error(error);
       setProgress(dom, { phase: "Merging", value: 0, total: 1, label: "Failed" });
       setProgressVisibility(dom, false);
       setActionState(dom, {
         canExtract: state.files.length > 0,
-        canMerge: state.labels.length > 0,
+        canMerge: hasSelectedLabels(),
         canExport: Boolean(state.merged),
       });
       setStatus(dom, `Merge failed: ${error.message}`);
@@ -454,7 +459,7 @@ export function createApp() {
     setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
     setActionState(dom, {
       canExtract: state.files.length > 0,
-      canMerge: state.labels.length > 0,
+      canMerge: hasSelectedLabels(),
       canExport: false,
     });
     setStatus(dom, "Label order updated. Re-run merge to build a PDF with the new sequence.");
@@ -538,8 +543,8 @@ export function createApp() {
     setOutputPlanSummary(dom, slotCount);
   }
 
-  function getMergeLayout() {
-    const firstLabel = state.labels[0];
+  function getMergeLayout(labels = getSelectedLabels()) {
+    const firstLabel = labels[0];
     if (!firstLabel) {
       throw new Error("No labels available for merging.");
     }
@@ -642,6 +647,59 @@ export function createApp() {
     state.previewItems = [];
     state.previewIndex = 0;
     closePreviewModal(dom);
+  }
+
+  async function handleLabelSelectionChange(event) {
+    const checkbox = event.target.closest("[data-label-selected-id]");
+    if (!checkbox) {
+      return;
+    }
+
+    const label = state.labels.find((entry) => entry.id === checkbox.dataset.labelSelectedId);
+    if (!label) {
+      return;
+    }
+
+    label.selected = checkbox.checked;
+    await updateLabelSelection(`Label ${checkbox.checked ? "included" : "excluded"}.`);
+  }
+
+  async function selectAllLabels(selected) {
+    if (!state.labels.length) {
+      return;
+    }
+
+    state.labels.forEach((label) => {
+      label.selected = selected;
+    });
+    await updateLabelSelection(selected ? "All labels included." : "All labels excluded.");
+  }
+
+  async function updateLabelSelection(message) {
+    const selectedCount = getSelectedLabelCount();
+
+    renderLabels(dom, state.labels);
+    await resetMergedOutput();
+    setProgressVisibility(dom, false);
+    setProgress(dom, { phase: "Idle", value: 0, total: 0, label: "Idle" });
+    setActionState(dom, {
+      canExtract: state.files.length > 0,
+      canMerge: selectedCount > 0,
+      canExport: false,
+    });
+    setStatus(dom, `${message} ${selectedCount}/${state.labels.length} labels selected for merge.`);
+  }
+
+  function getSelectedLabels() {
+    return state.labels.filter((label) => label.selected !== false);
+  }
+
+  function getSelectedLabelCount() {
+    return getSelectedLabels().length;
+  }
+
+  function hasSelectedLabels() {
+    return getSelectedLabelCount() > 0;
   }
 }
 

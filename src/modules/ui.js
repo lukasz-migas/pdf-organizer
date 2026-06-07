@@ -31,6 +31,8 @@ export function getDom() {
     toggleSourceButton: document.querySelector("#toggle-source-button"),
     labelsPanel: document.querySelector("#labels-panel"),
     toggleLabelsButton: document.querySelector("#toggle-labels-button"),
+    checkAllLabelsButton: document.querySelector("#check-all-labels-button"),
+    uncheckAllLabelsButton: document.querySelector("#uncheck-all-labels-button"),
     labelGrid: document.querySelector("#label-grid"),
     mergedPreview: document.querySelector("#merged-preview"),
     previewModal: document.querySelector("#preview-modal"),
@@ -252,10 +254,10 @@ export function renderOutputPlanner(dom, patterns) {
  * @returns {void}
  */
 export function renderLabels(dom, labels) {
+  const selectedCount = getSelectedLabelCount(labels);
   dom.labelCount.textContent = String(labels.length);
-  dom.extractSummary.textContent = labels.length
-    ? `${labels.length} labels extracted`
-    : "Nothing extracted";
+  dom.extractSummary.textContent = getLabelSelectionSummary(labels, selectedCount);
+  setLabelSelectionControls(dom, labels, selectedCount);
 
   if (!labels.length) {
     dom.labelGrid.className = "preview-grid empty-state";
@@ -267,7 +269,17 @@ export function renderLabels(dom, labels) {
   dom.labelGrid.innerHTML = labels
     .map(
       (label, index) => `
-        <article class="preview-card is-draggable" draggable="true" data-label-id="${escapeHtml(label.id)}">
+        <article class="preview-card is-draggable ${label.selected === false ? "is-excluded" : ""}" draggable="true" data-label-id="${escapeHtml(label.id)}">
+          <div class="label-card-head">
+            <label class="label-select-control">
+              <input
+                type="checkbox"
+                data-label-selected-id="${escapeHtml(label.id)}"
+                ${label.selected === false ? "" : "checked"}
+              />
+              <span>Include</span>
+            </label>
+          </div>
           <button
             class="thumb-button"
             type="button"
@@ -345,6 +357,21 @@ export function setActionState(dom, { canExtract, canMerge, canExport }) {
   dom.clearButton.disabled = !(canExtract || canMerge || canExport);
   dom.downloadButton.disabled = !canExport;
   dom.printButton.disabled = !canExport;
+}
+
+/**
+ * Update all/none controls for extracted label selection.
+ *
+ * @param {object} dom
+ * @param {Array<object>} labels
+ * @param {number} [selectedCount]
+ * @returns {void}
+ */
+export function setLabelSelectionControls(dom, labels, selectedCount = getSelectedLabelCount(labels)) {
+  const hasLabels = labels.length > 0;
+
+  dom.checkAllLabelsButton.disabled = !hasLabels || selectedCount === labels.length;
+  dom.uncheckAllLabelsButton.disabled = !hasLabels || selectedCount === 0;
 }
 
 export function setLabelsCollapsed(dom, collapsed) {
@@ -451,6 +478,22 @@ export function setProgressVisibility(dom, visible) {
 
 function getLayoutLabel(layouts, documentType) {
   return layouts.find((layout) => layout.id === documentType)?.name ?? documentType;
+}
+
+function getLabelSelectionSummary(labels, selectedCount) {
+  if (!labels.length) {
+    return "Nothing extracted";
+  }
+
+  if (selectedCount === labels.length) {
+    return `${labels.length} labels selected`;
+  }
+
+  return `${selectedCount}/${labels.length} labels selected`;
+}
+
+function getSelectedLabelCount(labels) {
+  return labels.filter((label) => label.selected !== false).length;
 }
 
 function setModalNavigationState(dom, { canMovePrevious, canMoveNext }) {
